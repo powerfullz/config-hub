@@ -51,8 +51,8 @@ go build -ldflags="-s -w" -o config-hub .
 
 打开浏览器访问 `http://localhost:1323`，使用默认凭证登录：
 
-| 用户名 | 密码 |
-|--------|------|
+| 用户名  | 密码       |
+| ------- | ---------- |
 | `admin` | `admin123` |
 
 首次登录后建议通过 Web GUI 修改密码（或通过注册接口创建新用户后禁用 admin）。
@@ -66,31 +66,31 @@ docker run -p 1323:1323 -v $(pwd)/config-hub.db:/app/config-hub.db config-hub
 
 ## 核心 API
 
-| 方法 | 路径 | 认证 | 说明 |
-|------|------|------|------|
-| POST | `/api/auth/login` | 无 | 用户登录，返回 JWT |
-| POST | `/api/auth/register` | 无 | 注册新用户（可通过 `ENABLE_REGISTRATION=false` 禁用） |
-| GET | `/api/auth/me` | JWT | 获取当前用户信息 |
-| GET | `/api/subscriptions` | JWT | 列出所有订阅源 |
-| POST | `/api/subscriptions` | JWT | 添加订阅源 |
-| PUT | `/api/subscriptions/:id` | JWT | 更新订阅源 |
-| DELETE | `/api/subscriptions/:id` | JWT | 删除订阅源 |
-| POST | `/api/subscriptions/:id/refresh` | JWT | 手动刷新订阅源 |
-| GET | `/api/nodes` | JWT | 查询节点列表（支持 country/protocol/search 过滤） |
-| GET | `/api/nodes/stats` | JWT | 节点统计（按国家/协议/订阅分组） |
-| GET | `/api/profiles` | JWT | 列出配置档案 |
-| POST | `/api/profiles` | JWT | 创建配置档案 |
-| GET | `/api/profiles/:id` | JWT | 获取档案详情（含代理组和规则） |
-| PUT | `/api/profiles/:id` | JWT | 更新档案设置 |
-| DELETE | `/api/profiles/:id` | JWT | 删除档案 |
-| POST | `/api/profiles/:id/subscriptions` | JWT | 向档案添加订阅源 |
-| DELETE | `/api/profiles/:id/subscriptions/:subId` | JWT | 从档案移除订阅源 |
-| POST | `/api/profiles/:id/tokens` | JWT | 生成分发 Token（仅返回一次） |
-| GET | `/api/profiles/:id/tokens` | JWT | 列出档案的 Token 列表 |
-| DELETE | `/api/profiles/:id/tokens/:tokenId` | JWT | 吊销 Token（软删除） |
-| GET | `/api/profiles/:id/preview` | JWT | 预览生成的 YAML 配置 |
-| GET | `/api/profiles/:id/export` | JWT | 下载 YAML 配置文件 |
-| GET | `/sub/:profileId?token=xxx` | Token | 客户端订阅端点，返回 YAML 配置 |
+| 方法   | 路径                                     | 认证  | 说明                                                  |
+| ------ | ---------------------------------------- | ----- | ----------------------------------------------------- |
+| POST   | `/api/auth/login`                        | 无    | 用户登录，返回 JWT                                    |
+| POST   | `/api/auth/register`                     | 无    | 注册新用户（可通过 `ENABLE_REGISTRATION=false` 禁用） |
+| GET    | `/api/auth/me`                           | JWT   | 获取当前用户信息                                      |
+| GET    | `/api/subscriptions`                     | JWT   | 列出所有订阅源                                        |
+| POST   | `/api/subscriptions`                     | JWT   | 添加订阅源                                            |
+| PUT    | `/api/subscriptions/:id`                 | JWT   | 更新订阅源                                            |
+| DELETE | `/api/subscriptions/:id`                 | JWT   | 删除订阅源                                            |
+| POST   | `/api/subscriptions/:id/refresh`         | JWT   | 手动刷新订阅源                                        |
+| GET    | `/api/nodes`                             | JWT   | 查询节点列表（支持 country/protocol/search 过滤）     |
+| GET    | `/api/nodes/stats`                       | JWT   | 节点统计（按国家/协议/订阅分组）                      |
+| GET    | `/api/profiles`                          | JWT   | 列出配置档案                                          |
+| POST   | `/api/profiles`                          | JWT   | 创建配置档案                                          |
+| GET    | `/api/profiles/:id`                      | JWT   | 获取档案详情（含代理组和规则）                        |
+| PUT    | `/api/profiles/:id`                      | JWT   | 更新档案设置                                          |
+| DELETE | `/api/profiles/:id`                      | JWT   | 删除档案                                              |
+| POST   | `/api/profiles/:id/subscriptions`        | JWT   | 向档案添加订阅源                                      |
+| DELETE | `/api/profiles/:id/subscriptions/:subId` | JWT   | 从档案移除订阅源                                      |
+| POST   | `/api/profiles/:id/tokens`               | JWT   | 生成分发 Token（仅返回一次）                          |
+| GET    | `/api/profiles/:id/tokens`               | JWT   | 列出档案的 Token 列表                                 |
+| DELETE | `/api/profiles/:id/tokens/:tokenId`      | JWT   | 吊销 Token（软删除）                                  |
+| GET    | `/api/profiles/:id/preview`              | JWT   | 预览生成的 YAML 配置                                  |
+| GET    | `/api/profiles/:id/export`               | JWT   | 下载 YAML 配置文件                                    |
+| GET    | `/sub/:profileId?token=xxx`              | Token | 客户端订阅端点，返回 YAML 配置                        |
 
 ## 项目结构
 
@@ -156,21 +156,21 @@ config-hub/
 
 ## 技术栈
 
-| 层级 | 技术 |
-|------|------|
-| 后端语言 | Go 1.26 |
+| 层级      | 技术                                  |
+| --------- | ------------------------------------- |
+| 后端语言  | Go 1.26                               |
 | HTTP 框架 | [Echo v4](https://echo.labstack.com/) |
-| ORM | [GORM](https://gorm.io/) |
-| 数据库 | SQLite（glebarez/sqlite 纯 Go 驱动） |
-| 认证 | bcrypt + JWT (golang-jwt) |
-| 定时任务 | robfig/cron v3 |
-| 订阅解析 | Mihomo `convert.ConvertsV2Ray` |
-| 前端框架 | React 19 |
-| 构建工具 | Vite 8 |
-| 类型系统 | TypeScript 6 |
-| 拖拽交互 | dnd-kit (@dnd-kit/core) |
-| 路由 | react-router-dom v7 |
-| 配置格式 | Mihomo (Clash Meta) YAML |
+| ORM       | [GORM](https://gorm.io/)              |
+| 数据库    | SQLite（glebarez/sqlite 纯 Go 驱动）  |
+| 认证      | bcrypt + JWT (golang-jwt)             |
+| 定时任务  | robfig/cron v3                        |
+| 订阅解析  | Mihomo `convert.ConvertsV2Ray`        |
+| 前端框架  | React 19                              |
+| 构建工具  | Vite 8                                |
+| 类型系统  | TypeScript 6                          |
+| 拖拽交互  | dnd-kit (@dnd-kit/core)               |
+| 路由      | react-router-dom v7                   |
+| 配置格式  | Mihomo (Clash Meta) YAML              |
 
 ## 安全特性
 

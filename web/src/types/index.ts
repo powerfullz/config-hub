@@ -2,18 +2,20 @@ export interface Profile {
   id: number;
   user_id: number;
   name: string;
-  description: string;
-  group_type: number;
+  group_type: number;     // 0=select, 1=url-test, 2=load-balance
   landing: boolean;
   ipv6: boolean;
   tun: boolean;
+  full: boolean;
   keep_alive: boolean;
   fake_ip: boolean;
   quic: boolean;
-  regex_filter: string;
-  country_threshold: number;
+  regex: boolean;
+  threshold: number;
   proxy_groups?: ProxyGroup[];
   rules?: RuleEntry[];
+  subscriptions?: Subscription[];
+  subscription_groups?: SubscriptionGroup[];
 }
 
 export interface ProxyGroup {
@@ -85,5 +87,13 @@ export interface TokenCreateResponse {
 export interface User {
   id: number;
   username: string;
+  created_at: string;
+}
+
+export interface SubscriptionGroup {
+  id: number;
+  user_id: number;
+  name: string;
+  subscriptions?: Subscription[];
   created_at: string;
 }

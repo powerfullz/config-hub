@@ -8,4 +8,5 @@ var Models = []interface{}{
 	&ProxyGroup{},
 	&RuleEntry{},
 	&Token{},
+	&SubscriptionGroup{},
 }

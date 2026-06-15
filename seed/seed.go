@@ -48,18 +48,9 @@ func Run() error {
 
 	// Create default profile.
 	profile := model.Profile{
-		UserID:           adminUser.ID,
-		Name:             "Default",
-		Description:      "默认配置档案",
-		GroupType:        1,
-		Landing:          false,
-		IPv6:             false,
-		TUN:              false,
-		KeepAlive:        true,
-		FakeIP:           false,
-		QUIC:             true,
-		RegexFilter:      "all",
-		CountryThreshold: 0,
+		UserID:    adminUser.ID,
+		Name:      "Default",
+		GroupType: 0,
 	}
 	if err := tx.Create(&profile).Error; err != nil {
 		tx.Rollback()

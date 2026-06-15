@@ -45,6 +45,12 @@ import { CSS } from '@dnd-kit/utilities';
 
 const { Text } = Typography;
 
+const GROUP_TYPE_LABEL: Record<number, string> = {
+  0: '手动选择 (select)',
+  1: '自动选择 (url-test)',
+  2: '负载均衡 (load-balance)',
+};
+
 const GROUP_TYPE_COLORS: Record<string, string> = {
   select: 'blue',
   'url-test': 'green',
@@ -226,7 +232,7 @@ export default function Dashboard() {
                     }
                     description={
                       <Text type="secondary" style={{ fontSize: 12 }} ellipsis>
-                        {item.description || 'No description'}
+                        {GROUP_TYPE_LABEL[item.group_type] ?? 'No description'}
                       </Text>
                     }
                   />

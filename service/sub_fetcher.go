@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"config-hub/internal/convert"
+	"github.com/metacubex/mihomo/common/convert"
 	"gopkg.in/yaml.v3"
 )
 

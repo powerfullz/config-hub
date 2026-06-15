@@ -1,4 +1,4 @@
-import type { Profile } from '../types';
+import type { Profile, SubscriptionGroup } from '../types';
 
 const BASE = '';
 
@@ -100,6 +100,36 @@ class ApiClient {
 
   deleteProfile(id: number) {
     return this.delete<{ message: string }>(`/api/profiles/${id}`);
+  }
+
+  // ── Subscription Group CRUD ──────────────────────────────────────
+
+  listSubscriptionGroups() {
+    return this.get<SubscriptionGroup[]>('/api/subscription-groups');
+  }
+
+  createSubscriptionGroup(name: string) {
+    return this.post<SubscriptionGroup>('/api/subscription-groups', { name });
+  }
+
+  getSubscriptionGroup(id: number) {
+    return this.get<SubscriptionGroup>(`/api/subscription-groups/${id}`);
+  }
+
+  updateSubscriptionGroup(id: number, name: string) {
+    return this.put<SubscriptionGroup>(`/api/subscription-groups/${id}`, { name });
+  }
+
+  async deleteSubscriptionGroup(id: number): Promise<void> {
+    await this.delete(`/api/subscription-groups/${id}`);
+  }
+
+  addSubToGroup(groupId: number, subId: number) {
+    return this.post(`/api/subscription-groups/${groupId}/subscriptions/${subId}`);
+  }
+
+  removeSubFromGroup(groupId: number, subId: number) {
+    return this.delete(`/api/subscription-groups/${groupId}/subscriptions/${subId}`);
   }
 }
 

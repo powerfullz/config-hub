@@ -28,17 +28,17 @@ func ListProfiles(c echo.Context) error {
 // Pointer fields distinguish "omitted" from explicit zero values,
 // allowing safe application of defaults (Parse Don't Validate).
 type createProfilePayload struct {
-	Name             string  `json:"name"`
-	Description      *string `json:"description"`
-	GroupType        *int    `json:"group_type"`
-	Landing          *bool   `json:"landing"`
-	IPv6             *bool   `json:"ipv6"`
-	TUN              *bool   `json:"tun"`
-	KeepAlive        *bool   `json:"keep_alive"`
-	FakeIP           *bool   `json:"fake_ip"`
-	QUIC             *bool   `json:"quic"`
-	RegexFilter      *string `json:"regex_filter"`
-	CountryThreshold *int    `json:"country_threshold"`
+	Name      string `json:"name"`
+	GroupType *int   `json:"group_type"`
+	Landing   *bool  `json:"landing"`
+	IPv6      *bool  `json:"ipv6"`
+	TUN       *bool  `json:"tun"`
+	Full      *bool  `json:"full"`
+	KeepAlive *bool  `json:"keep_alive"`
+	FakeIP    *bool  `json:"fake_ip"`
+	QUIC      *bool  `json:"quic"`
+	Regex     *bool  `json:"regex"`
+	Threshold *int   `json:"threshold"`
 }
 
 // CreateProfile POST /api/profiles
@@ -52,31 +52,14 @@ func CreateProfile(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Name is required", "code": 400})
 	}
 
-	// Build profile with explicit defaults for the 4 documented fields,
-	// then override with any provided values.
+	// Build profile with explicit defaults, then override with any provided values.
 	profile := model.Profile{
-		UserID:      c.Get("user_id").(uint),
-		Name:        input.Name,
-		GroupType:   1,
-		KeepAlive:   true,
-		QUIC:        true,
-		RegexFilter: "all",
+		UserID: c.Get("user_id").(uint),
+		Name:   input.Name,
 	}
 
-	if input.Description != nil {
-		profile.Description = *input.Description
-	}
 	if input.GroupType != nil {
 		profile.GroupType = *input.GroupType
-	}
-	if input.KeepAlive != nil {
-		profile.KeepAlive = *input.KeepAlive
-	}
-	if input.QUIC != nil {
-		profile.QUIC = *input.QUIC
-	}
-	if input.RegexFilter != nil {
-		profile.RegexFilter = *input.RegexFilter
 	}
 	if input.Landing != nil {
 		profile.Landing = *input.Landing
@@ -87,11 +70,23 @@ func CreateProfile(c echo.Context) error {
 	if input.TUN != nil {
 		profile.TUN = *input.TUN
 	}
+	if input.Full != nil {
+		profile.Full = *input.Full
+	}
+	if input.KeepAlive != nil {
+		profile.KeepAlive = *input.KeepAlive
+	}
 	if input.FakeIP != nil {
 		profile.FakeIP = *input.FakeIP
 	}
-	if input.CountryThreshold != nil {
-		profile.CountryThreshold = *input.CountryThreshold
+	if input.QUIC != nil {
+		profile.QUIC = *input.QUIC
+	}
+	if input.Regex != nil {
+		profile.Regex = *input.Regex
+	}
+	if input.Threshold != nil {
+		profile.Threshold = *input.Threshold
 	}
 
 	tx := db.DB.Begin()
@@ -137,6 +132,7 @@ func GetProfile(c echo.Context) error {
 	if err := db.DB.
 		Preload("ProxyGroups", func(tx *gorm.DB) *gorm.DB { return tx.Order("sort_order ASC") }).
 		Preload("Rules", func(tx *gorm.DB) *gorm.DB { return tx.Order("sort_order ASC") }).
+		Preload("SubscriptionGroups").
 		First(&profile, id).Error; err != nil {
 		return c.JSON(http.StatusNotFound, echo.Map{"error": "Profile not found", "code": 404})
 	}
@@ -147,17 +143,17 @@ func GetProfile(c echo.Context) error {
 // updateProfilePayload is a parse-once struct for UpdateProfile to distinguish
 // omitted fields from zero values (Parse Don't Validate).
 type updateProfilePayload struct {
-	Name             *string `json:"name"`
-	Description      *string `json:"description"`
-	GroupType        *int    `json:"group_type"`
-	Landing          *bool   `json:"landing"`
-	IPv6             *bool   `json:"ipv6"`
-	TUN              *bool   `json:"tun"`
-	KeepAlive        *bool   `json:"keep_alive"`
-	FakeIP           *bool   `json:"fake_ip"`
-	QUIC             *bool   `json:"quic"`
-	RegexFilter      *string `json:"regex_filter"`
-	CountryThreshold *int    `json:"country_threshold"`
+	Name      *string `json:"name"`
+	GroupType *int    `json:"group_type"`
+	Landing   *bool   `json:"landing"`
+	IPv6      *bool   `json:"ipv6"`
+	TUN       *bool   `json:"tun"`
+	Full      *bool   `json:"full"`
+	KeepAlive *bool   `json:"keep_alive"`
+	FakeIP    *bool   `json:"fake_ip"`
+	QUIC      *bool   `json:"quic"`
+	Regex     *bool   `json:"regex"`
+	Threshold *int    `json:"threshold"`
 }
 
 // UpdateProfile PUT /api/profiles/:id
@@ -181,9 +177,6 @@ func UpdateProfile(c echo.Context) error {
 	if input.Name != nil {
 		profile.Name = *input.Name
 	}
-	if input.Description != nil {
-		profile.Description = *input.Description
-	}
 	if input.GroupType != nil {
 		profile.GroupType = *input.GroupType
 	}
@@ -196,6 +189,9 @@ func UpdateProfile(c echo.Context) error {
 	if input.TUN != nil {
 		profile.TUN = *input.TUN
 	}
+	if input.Full != nil {
+		profile.Full = *input.Full
+	}
 	if input.KeepAlive != nil {
 		profile.KeepAlive = *input.KeepAlive
 	}
@@ -205,11 +201,11 @@ func UpdateProfile(c echo.Context) error {
 	if input.QUIC != nil {
 		profile.QUIC = *input.QUIC
 	}
-	if input.RegexFilter != nil {
-		profile.RegexFilter = *input.RegexFilter
+	if input.Regex != nil {
+		profile.Regex = *input.Regex
 	}
-	if input.CountryThreshold != nil {
-		profile.CountryThreshold = *input.CountryThreshold
+	if input.Threshold != nil {
+		profile.Threshold = *input.Threshold
 	}
 
 	if err := db.DB.Save(&profile).Error; err != nil {
@@ -241,6 +237,10 @@ func DeleteProfile(c echo.Context) error {
 
 	// Clear many-to-many associations before deleting related records.
 	if err := tx.Model(&profile).Association("Subscriptions").Clear(); err != nil {
+		tx.Rollback()
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": err.Error(), "code": 500})
+	}
+	if err := tx.Model(&profile).Association("SubscriptionGroups").Clear(); err != nil {
 		tx.Rollback()
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": err.Error(), "code": 500})
 	}
@@ -333,4 +333,81 @@ func RemoveSubscriptionFromProfile(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, echo.Map{"message": "Subscription removed from profile"})
+}
+
+// AddSubscriptionGroupToProfile POST /api/profiles/:id/subscription-groups
+// Adds a subscription group to the profile's many2many relation.
+func AddSubscriptionGroupToProfile(c echo.Context) error {
+	userID := c.Get("user_id").(uint)
+	profileID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid profile ID", "code": 400})
+	}
+
+	var profile model.Profile
+	if err := db.DB.Where("id = ? AND user_id = ?", profileID, userID).First(&profile).Error; err != nil {
+		return c.JSON(http.StatusNotFound, echo.Map{"error": "Profile not found", "code": 404})
+	}
+
+	var input struct {
+		SubscriptionGroupID uint `json:"subscription_group_id"`
+	}
+	if err := c.Bind(&input); err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid request body", "code": 400})
+	}
+
+	var group model.SubscriptionGroup
+	if err := db.DB.Where("id = ? AND user_id = ?", input.SubscriptionGroupID, userID).First(&group).Error; err != nil {
+		return c.JSON(http.StatusNotFound, echo.Map{"error": "Subscription group not found", "code": 404})
+	}
+
+	if err := db.DB.Model(&profile).Association("SubscriptionGroups").Append(&group); err != nil {
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": err.Error(), "code": 500})
+	}
+	return c.JSON(http.StatusOK, echo.Map{"message": "Subscription group added to profile"})
+}
+
+// RemoveSubscriptionGroupFromProfile DELETE /api/profiles/:id/subscription-groups/:groupId
+// Removes a subscription group from the profile's many2many relation.
+func RemoveSubscriptionGroupFromProfile(c echo.Context) error {
+	userID := c.Get("user_id").(uint)
+	profileID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid profile ID", "code": 400})
+	}
+	groupID, err := strconv.ParseUint(c.Param("groupId"), 10, 64)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid group ID", "code": 400})
+	}
+
+	var profile model.Profile
+	if err := db.DB.Where("id = ? AND user_id = ?", profileID, userID).First(&profile).Error; err != nil {
+		return c.JSON(http.StatusNotFound, echo.Map{"error": "Profile not found", "code": 404})
+	}
+
+	var group model.SubscriptionGroup
+	if err := db.DB.Where("id = ? AND user_id = ?", groupID, userID).First(&group).Error; err != nil {
+		return c.JSON(http.StatusNotFound, echo.Map{"error": "Subscription group not found", "code": 404})
+	}
+
+	if err := db.DB.Model(&profile).Association("SubscriptionGroups").Delete(&group); err != nil {
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": err.Error(), "code": 500})
+	}
+	return c.JSON(http.StatusOK, echo.Map{"message": "Subscription group removed from profile"})
+}
+
+// ListProfileSubscriptionGroups GET /api/profiles/:id/subscription-groups
+// Returns all subscription groups associated with the profile.
+func ListProfileSubscriptionGroups(c echo.Context) error {
+	userID := c.Get("user_id").(uint)
+	profileID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid profile ID", "code": 400})
+	}
+
+	var profile model.Profile
+	if err := db.DB.Preload("SubscriptionGroups").Where("id = ? AND user_id = ?", profileID, userID).First(&profile).Error; err != nil {
+		return c.JSON(http.StatusNotFound, echo.Map{"error": "Profile not found", "code": 404})
+	}
+	return c.JSON(http.StatusOK, profile.SubscriptionGroups)
 }
