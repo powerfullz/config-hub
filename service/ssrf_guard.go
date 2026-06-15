@@ -18,8 +18,6 @@ var blockedCIDRs = []string{
 	"169.254.0.0/16", // link-local (includes AWS/GCP metadata endpoint 169.254.169.254)
 	"0.0.0.0/8",
 	"224.0.0.0/4",  // multicast
-	"100.64.0.0/10",  // CGNAT
-	"198.18.0.0/15",  // benchmark
 	"fc00::/7",       // IPv6 ULA
 	"fe80::/10",      // IPv6 link-local
 	"::1/128",        // IPv6 loopback

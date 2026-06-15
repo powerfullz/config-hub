@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"config-hub/db"
@@ -136,7 +138,24 @@ func RefreshSubscription(c echo.Context) error {
 
 	result, err := service.FetchSubscription(sub.URL, sub.UserAgent)
 	if err != nil {
-		return c.JSON(http.StatusBadGateway, echo.Map{"error": "Failed to fetch subscription: " + err.Error(), "code": 502})
+		slog.Error("Subscription refresh failed", "id", id, "url", sub.URL, "error", err)
+		code := http.StatusBadGateway
+		errMsg := err.Error()
+		if strings.Contains(errMsg, "unsupported protocol scheme") {
+			code = http.StatusBadRequest
+		} else if strings.Contains(errMsg, "unexpected status") {
+			code = http.StatusBadGateway // proxy the upstream failure
+		} else if strings.Contains(errMsg, "deadline exceeded") || strings.Contains(errMsg, "timeout") {
+			code = http.StatusGatewayTimeout
+		} else if strings.Contains(errMsg, "no such host") {
+			code = http.StatusNotFound
+		} else if strings.Contains(errMsg, "SSRF guard") {
+			code = http.StatusForbidden
+		}
+		return c.JSON(code, echo.Map{
+			"error": "Failed to fetch subscription: " + errMsg,
+			"code":  code,
+		})
 	}
 
 	// Delete old nodes for this subscription
