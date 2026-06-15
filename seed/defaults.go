@@ -2,13 +2,13 @@ package seed
 
 // DefaultDNS holds the default DNS configuration for a mihomo/clash profile.
 var DefaultDNS = map[string]interface{}{
-	"enable":                true,
-	"ipv6":                  false,
-	"prefer-h3":             true,
-	"enhanced-mode":         "redir-host",
-	"default-nameserver":    []string{"119.29.29.29", "223.5.5.5"},
-	"nameserver":            []string{"system", "223.5.5.5", "119.29.29.29", "180.184.1.1"},
-	"fallback":              []string{"quic://dns0.eu", "https://dns.cloudflare.com/dns-query", "https://dns.sb/dns-query", "tcp://208.67.222.222", "tcp://8.26.56.2"},
+	"enable":                  true,
+	"ipv6":                    false,
+	"prefer-h3":               true,
+	"enhanced-mode":           "redir-host",
+	"default-nameserver":      []string{"119.29.29.29", "223.5.5.5"},
+	"nameserver":              []string{"system", "223.5.5.5", "119.29.29.29", "180.184.1.1"},
+	"fallback":                []string{"quic://dns0.eu", "https://dns.cloudflare.com/dns-query", "https://dns.sb/dns-query", "tcp://208.67.222.222", "tcp://8.26.56.2"},
 	"proxy-server-nameserver": []string{"https://dns.alidns.com/dns-query", "tls://dot.pub"},
 }
 
