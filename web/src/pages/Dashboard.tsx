@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../api/client';
 import type { Profile, ProxyGroup, RuleEntry } from '../types';
+import TokenManager from '../components/TokenManager';
 import {
   Card,
   Typography,
@@ -319,6 +320,9 @@ export default function Dashboard() {
                 </div>
               )}
             </Card>
+
+            {/* Share Link Tokens */}
+            <TokenManager profileId={selectedId!} />
           </>
         )}
       </main>

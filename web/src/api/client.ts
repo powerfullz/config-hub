@@ -68,6 +68,23 @@ class ApiClient {
     if (!res.ok) throw new Error('Request failed');
     return res.text();
   }
+
+  // ── Token (Share Link) Management ──────────────────────────────────
+
+  listTokens(profileId: number) {
+    return this.get<import('../types').Token[]>(`/api/profiles/${profileId}/tokens`);
+  }
+
+  createToken(profileId: number, name: string) {
+    return this.post<import('../types').TokenCreateResponse>(
+      `/api/profiles/${profileId}/tokens`,
+      { name },
+    );
+  }
+
+  async revokeToken(profileId: number, tokenId: number): Promise<void> {
+    await this.delete(`/api/profiles/${profileId}/tokens/${tokenId}`);
+  }
 }
 
 export const api = new ApiClient();

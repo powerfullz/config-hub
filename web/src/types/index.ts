@@ -78,6 +78,7 @@ export interface TokenCreateResponse {
   token: string;
   name: string;
   created_at: string;
+  message?: string;
 }
 
 export interface User {
