@@ -1,0 +1,72 @@
+{
+  "modal": {
+    "titleEdit": "Profile",
+    "titleCreate": "New Profile"
+  },
+  "delete": {
+    "confirm": "Are you sure? This action cannot be undone.",
+    "button": "Delete"
+  },
+  "field": {
+    "name": "Profile Name",
+    "nameRequired": "Please enter a profile name",
+    "fileName": "Export Filename (optional, defaults to profile-name.yaml)",
+    "fileNamePlaceholder": "e.g. CNIX.yaml",
+    "groupType": "Country/Region Proxy Group Type",
+    "landing": "Enable Landing Node",
+    "ipv6": "Enable IPv6",
+    "tun": "Enable TUN Mode",
+    "full": "Full Config (Pure Kernel)",
+    "keepAlive": "Enable KeepAlive",
+    "fakeIp": "FakeIP Mode",
+    "quic": "QUIC Traffic",
+    "regex": "Regex Filter Mode",
+    "threshold": "Region Node Threshold (hide groups below this count)"
+  },
+  "section": {
+    "subscriptions": "Subscriptions",
+    "subscriptionGroups": "Subscription Groups"
+  },
+  "empty": {
+    "noSubscriptions": "No subscriptions. Add one in Subscription Management first.",
+    "noGroups": "No subscription groups available."
+  },
+  "token": {
+    "title": "Share Links",
+    "generateButton": "Generate New Token",
+    "modalTitle": "Generate New Token",
+    "formHint": "Give this token a name to identify its purpose.",
+    "placeholder": "e.g. My iPhone, Team Access",
+    "createdHint": "Token created successfully. Copy it now — it won't be shown again.",
+    "rawToken": "Raw Token",
+    "shareUrl": "Share URL",
+    "table": {
+      "name": "Name",
+      "created": "Created",
+      "lastUsed": "Last Used",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "status": {
+      "revoked": "Revoked",
+      "active": "Active"
+    },
+    "revokeConfirm": "Revoke this token?",
+    "empty": "No share links yet",
+    "message": {
+      "loadFailed": "Failed to load tokens",
+      "created": "Token created",
+      "createFailed": "Failed to create token",
+      "revoked": "Token revoked",
+      "revokeFailed": "Failed to revoke token",
+      "clipboardUnavailable": "Clipboard not available",
+      "copied": "{{label}} copied!",
+      "copyFailed": "Failed to copy"
+    }
+  },
+  "message": {
+    "updated": "Profile updated",
+    "created": "Profile created",
+    "deleted": "Profile deleted"
+  }
+}

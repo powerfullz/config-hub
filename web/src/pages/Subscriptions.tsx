@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../api/client';
 import type { Subscription, Node } from '../types';
+import { useTranslation } from '../i18n';
+import i18n from '../i18n';
 import {
   Table,
   Button,
@@ -30,6 +32,8 @@ import type { TableProps } from 'antd';
 const { Title, Text } = Typography;
 
 export default function Subscriptions() {
+  const { t } = useTranslation('subscriptions');
+  const { t: tc } = useTranslation('common');
   const [subs, setSubs] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedRowKeys, setExpandedRowKeys] = useState<number[]>([]);
@@ -47,7 +51,7 @@ export default function Subscriptions() {
       const data = await api.get<Subscription[]>('/api/subscriptions');
       setSubs(data);
     } catch (e: unknown) {
-      messageApi.error(e instanceof Error ? e.message : 'Failed to load subscriptions');
+      messageApi.error(e instanceof Error ? e.message : t('message.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -58,7 +62,7 @@ export default function Subscriptions() {
     api
       .get<Subscription[]>('/api/subscriptions')
       .then(data => { if (!cancelled) setSubs(data); })
-      .catch(e => { if (!cancelled) messageApi.error(e instanceof Error ? e.message : 'Failed to load subscriptions'); })
+      .catch(e => { if (!cancelled) messageApi.error(e instanceof Error ? e.message : t('message.loadFailed')); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [messageApi]);
@@ -86,10 +90,10 @@ export default function Subscriptions() {
       setSubmitting(true);
       if (editingSub) {
         await api.put(`/api/subscriptions/${editingSub.id}`, values);
-        messageApi.success('Subscription updated');
+        messageApi.success(t('message.updated'));
       } else {
         await api.post('/api/subscriptions', values);
-        messageApi.success('Subscription added');
+        messageApi.success(t('message.added'));
       }
       setModalOpen(false);
       form.resetFields();
@@ -106,11 +110,11 @@ export default function Subscriptions() {
   const handleDelete = async (id: number) => {
     try {
       await api.delete(`/api/subscriptions/${id}`);
-      messageApi.success('Subscription deleted');
+      messageApi.success(t('message.deleted'));
       setExpandedRowKeys(prev => prev.filter(k => k !== id));
       loadSubs();
     } catch (e: unknown) {
-      messageApi.error(e instanceof Error ? e.message : 'Failed to delete subscription');
+      messageApi.error(e instanceof Error ? e.message : t('message.deleteFailed'));
     }
   };
 
@@ -119,10 +123,10 @@ export default function Subscriptions() {
       const res = await api.post<{ node_count: number; traffic: string }>(
         `/api/subscriptions/${id}/refresh`
       );
-      messageApi.success(`Refreshed: ${res.node_count} nodes`);
+      messageApi.success(t('message.refreshed', { count: res.node_count }));
       loadSubs();
     } catch (e: unknown) {
-      messageApi.error(e instanceof Error ? e.message : 'Failed to refresh subscription');
+      messageApi.error(e instanceof Error ? e.message : t('message.refreshFailed'));
     }
   };
 
@@ -131,7 +135,7 @@ export default function Subscriptions() {
       await api.put(`/api/subscriptions/${sub.id}`, { enabled: !sub.enabled });
       loadSubs();
     } catch (e: unknown) {
-      messageApi.error(e instanceof Error ? e.message : 'Failed to toggle subscription');
+      messageApi.error(e instanceof Error ? e.message : t('message.toggleFailed'));
     }
   };
 
@@ -144,7 +148,7 @@ export default function Subscriptions() {
           const data = await api.get<Node[]>(`/api/nodes?subscription_id=${record.id}`);
           setNodes(prev => ({ ...prev, [record.id]: data }));
         } catch (e: unknown) {
-          messageApi.error(e instanceof Error ? e.message : 'Failed to load nodes');
+          messageApi.error(e instanceof Error ? e.message : t('message.loadNodesFailed'));
         } finally {
           setNodesLoading(prev => ({ ...prev, [record.id]: false }));
         }
@@ -156,30 +160,30 @@ export default function Subscriptions() {
 
   const nodeColumns = [
     {
-      title: 'Name',
+      title: t('column.name'),
       dataIndex: 'name',
       key: 'name',
     },
     {
-      title: 'Type',
+      title: t('column.type'),
       dataIndex: 'protocol',
       key: 'protocol',
       render: (protocol: string) => <Tag>{protocol}</Tag>,
     },
     {
-      title: 'Server',
+      title: t('column.server'),
       dataIndex: 'server',
       key: 'server',
       ellipsis: true,
     },
     {
-      title: 'Port',
+      title: t('column.port'),
       dataIndex: 'port',
       key: 'port',
       width: 80,
     },
     {
-      title: 'Country',
+      title: t('column.country'),
       dataIndex: 'country',
       key: 'country',
       render: (country: string) => country || '-',
@@ -188,13 +192,13 @@ export default function Subscriptions() {
 
   const columns: TableProps<Subscription>['columns'] = [
     {
-      title: 'Name',
+      title: t('column.name'),
       dataIndex: 'name',
       key: 'name',
       render: (text: string) => <Text strong>{text}</Text>,
     },
     {
-      title: 'URL',
+      title: t('column.url'),
       dataIndex: 'url',
       key: 'url',
       ellipsis: true,
@@ -210,7 +214,7 @@ export default function Subscriptions() {
       ),
     },
     {
-      title: 'Nodes',
+      title: t('column.nodes'),
       dataIndex: 'node_count',
       key: 'node_count',
       width: 80,
@@ -222,7 +226,7 @@ export default function Subscriptions() {
       ),
     },
     {
-      title: 'Enabled',
+      title: t('column.enabled'),
       dataIndex: 'enabled',
       key: 'enabled',
       width: 80,
@@ -236,29 +240,29 @@ export default function Subscriptions() {
       ),
     },
     {
-      title: 'Last Fetched',
+      title: t('column.lastFetched'),
       dataIndex: 'last_fetched_at',
       key: 'last_fetched_at',
       width: 160,
       render: (text: string) =>
         text ? (
           <Text type="secondary" style={{ fontSize: 12 }}>
-            {new Date(text).toLocaleString()}
+            {new Date(text).toLocaleString(i18n.language)}
           </Text>
         ) : (
           <Text type="secondary" style={{ fontSize: 12 }}>
-            Never
+            {t('status.never')}
           </Text>
         ),
     },
     {
-      title: 'Actions',
+      title: t('column.actions'),
       key: 'actions',
       width: 120,
       align: 'center' as const,
       render: (_: unknown, record: Subscription) => (
         <Space size={4}>
-          <Tooltip title="Refresh">
+          <Tooltip title={t('tooltip.refresh')}>
             <Button
               type="text"
               icon={<ReloadOutlined />}
@@ -266,7 +270,7 @@ export default function Subscriptions() {
               size="small"
             />
           </Tooltip>
-          <Tooltip title="Edit">
+          <Tooltip title={t('tooltip.edit')}>
             <Button
               type="text"
               icon={<EditOutlined />}
@@ -275,13 +279,13 @@ export default function Subscriptions() {
             />
           </Tooltip>
           <Popconfirm
-            title="Delete this subscription?"
+            title={t('deleteConfirm')}
             onConfirm={() => handleDelete(record.id)}
-            okText="Delete"
-            cancelText="Cancel"
+            okText={tc('button.delete')}
+            cancelText={tc('button.cancel')}
             okButtonProps={{ danger: true }}
           >
-            <Tooltip title="Delete">
+            <Tooltip title={t('tooltip.delete')}>
               <Button
                 type="text"
                 danger
@@ -302,12 +306,12 @@ export default function Subscriptions() {
       <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Space>
           <Title level={4} style={{ margin: 0 }}>
-            Subscriptions
+            {t('title')}
           </Title>
           <Tag color="blue">{subs.length}</Tag>
         </Space>
         <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-          Add Subscription
+          {t('addButton')}
         </Button>
       </div>
 
@@ -326,7 +330,7 @@ export default function Subscriptions() {
             if (isLoading) {
               return (
                 <div style={{ padding: 24, textAlign: 'center' }}>
-                  <Spin tip="Loading nodes..." />
+                  <Spin tip={t('status.loadingNodes')} />
                 </div>
               );
             }
@@ -339,20 +343,20 @@ export default function Subscriptions() {
                 pagination={false}
                 size="small"
                 locale={{
-                  emptyText: <Empty description="No nodes" image={Empty.PRESENTED_IMAGE_SIMPLE} />,
+                  emptyText: <Empty description={t('status.noNodes')} image={Empty.PRESENTED_IMAGE_SIMPLE} />,
                 }}
               />
             );
           },
         }}
         locale={{
-          emptyText: <Empty description="No subscriptions" />,
+          emptyText: <Empty description={t('status.noSubs')} />,
         }}
-        pagination={{ pageSize: 10, showSizeChanger: false, showTotal: (total) => `Total ${total} subscriptions` }}
+        pagination={{ pageSize: 10, showSizeChanger: false, showTotal: (total) => t('status.totalSubscriptions', { total }) }}
       />
 
       <Modal
-        title={editingSub ? 'Edit Subscription' : 'Add Subscription'}
+        title={editingSub ? t('modal.titleEdit') : t('modal.titleAdd')}
         open={modalOpen}
         onOk={handleModalOk}
         onCancel={() => {
@@ -360,37 +364,37 @@ export default function Subscriptions() {
           form.resetFields();
         }}
         confirmLoading={submitting}
-        okText={editingSub ? 'Update' : 'Add'}
+        okText={editingSub ? t('modal.okUpdate') : t('modal.okAdd')}
       >
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item
             name="name"
-            label="Name"
-            rules={[{ required: true, message: 'Please enter a name' }]}
+            label={t('form.name')}
+            rules={[{ required: true, message: t('form.nameRequired') }]}
           >
-            <Input placeholder="Subscription name" />
+            <Input placeholder={t('form.namePlaceholder')} />
           </Form.Item>
           <Form.Item
             name="url"
-            label="URL"
+            label={t('form.url')}
             rules={[
-              { required: true, message: 'Please enter a URL' },
-              { type: 'url', message: 'Please enter a valid URL' },
+              { required: true, message: t('form.urlRequired') },
+              { type: 'url', message: t('form.urlInvalid') },
             ]}
           >
-            <Input placeholder="https://example.com/subscription" />
+            <Input placeholder={t('form.urlPlaceholder')} />
           </Form.Item>
           <Form.Item
             name="user_agent"
-            label="User-Agent (optional)"
+            label={t('form.userAgent')}
           >
-            <Input placeholder="Default: random Chrome UA" />
+            <Input placeholder={t('form.userAgentPlaceholder')} />
           </Form.Item>
           <Form.Item
             name="fetch_proxy"
-            label="Fetch Proxy (optional)"
+            label={t('form.fetchProxy')}
           >
-            <Input placeholder="e.g. http://127.0.0.1:7890 or socks5://127.0.0.1:7891" />
+            <Input placeholder={t('form.fetchProxyPlaceholder')} />
           </Form.Item>
         </Form>
       </Modal>

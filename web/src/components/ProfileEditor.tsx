@@ -5,6 +5,7 @@ import {
 } from 'antd';
 import type { Profile, Subscription, SubscriptionGroup } from '../types';
 import { api } from '../api/client';
+import { useTranslation } from '../i18n';
 
 interface Props {
   open: boolean;
@@ -14,6 +15,8 @@ interface Props {
 }
 
 export default function ProfileEditor({ open, profile, onClose, onSaved }: Props) {
+  const { t } = useTranslation('profileEditor');
+  const { t: tc } = useTranslation('common');
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [subs, setSubs] = useState<Subscription[]>([]);
@@ -108,7 +111,7 @@ export default function ProfileEditor({ open, profile, onClose, onSaved }: Props
         }
       }
 
-      messageApi.success(isEdit ? 'Profile updated' : 'Profile created');
+      messageApi.success(isEdit ? t('message.updated') : t('message.created'));
       onSaved();
       onClose();
     } catch (err: unknown) {
@@ -123,7 +126,7 @@ export default function ProfileEditor({ open, profile, onClose, onSaved }: Props
     setLoading(true);
     try {
       await api.deleteProfile(profile.id);
-      messageApi.success('Profile deleted');
+      messageApi.success(t('message.deleted'));
       onSaved();
       onClose();
     } catch (err: unknown) {
@@ -137,7 +140,7 @@ export default function ProfileEditor({ open, profile, onClose, onSaved }: Props
     <>
       {contextHolder}
       <Modal
-        title={isEdit ? '覆写方案' : '新建覆写方案'}
+        title={isEdit ? t('modal.titleEdit') : t('modal.titleCreate')}
         open={open}
         onCancel={onClose}
         destroyOnClose
@@ -147,20 +150,20 @@ export default function ProfileEditor({ open, profile, onClose, onSaved }: Props
             <span>
               {isEdit && (
                 <Popconfirm
-                  title="确定删除？此操作不可撤销"
+                  title={t('delete.confirm')}
                   onConfirm={handleDelete}
-                  okText="删除"
+                  okText={t('delete.button')}
                   okType="danger"
-                  cancelText="取消"
+                  cancelText={tc('button.cancel')}
                 >
-                  <Button danger>删除</Button>
+                  <Button danger>{t('delete.button')}</Button>
                 </Popconfirm>
               )}
             </span>
             <Space>
-              <Button onClick={onClose}>取消</Button>
+              <Button onClick={onClose}>{tc('button.cancel')}</Button>
               <Button type="primary" loading={loading} onClick={handleSubmit}>
-                保存
+                {tc('button.save')}
               </Button>
             </Space>
           </Space>
@@ -169,37 +172,37 @@ export default function ProfileEditor({ open, profile, onClose, onSaved }: Props
         <Form form={form} layout="vertical">
           <Form.Item
             name="name"
-            label="方案名称"
-            rules={[{ required: true, message: '请输入方案名称' }]}
+            label={t('field.name')}
+            rules={[{ required: true, message: t('field.nameRequired') }]}
           >
             <Input autoFocus />
           </Form.Item>
 
           <Form.Item
             name="file_name"
-            label="导出文件名（可选，默认使用方案名称.yaml）"
+            label={t('field.fileName')}
           >
-            <Input placeholder="例如: CNIX.yaml" />
+            <Input placeholder={t('field.fileNamePlaceholder')} />
           </Form.Item>
 
-          <Form.Item name="group_type" label="国家/地区代理组类型">
+          <Form.Item name="group_type" label={t('field.groupType')}>
             <Select
               options={[
-                { value: 0, label: '手动选择 (select)' },
-                { value: 1, label: '自动选择 (url-test)' },
-                { value: 2, label: '负载均衡 (load-balance)' },
+                { value: 0, label: tc('groupType.select') },
+                { value: 1, label: tc('groupType.urlTest') },
+                { value: 2, label: tc('groupType.loadBalance') },
               ]}
             />
           </Form.Item>
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="landing" label="启用落地节点功能" valuePropName="checked">
+              <Form.Item name="landing" label={t('field.landing')} valuePropName="checked">
                 <Switch />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="ipv6" label="启用 IPv6 支持" valuePropName="checked">
+              <Form.Item name="ipv6" label={t('field.ipv6')} valuePropName="checked">
                 <Switch />
               </Form.Item>
             </Col>
@@ -207,12 +210,12 @@ export default function ProfileEditor({ open, profile, onClose, onSaved }: Props
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="tun" label="启用 TUN 模式" valuePropName="checked">
+              <Form.Item name="tun" label={t('field.tun')} valuePropName="checked">
                 <Switch />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="full" label="完整配置（纯内核启动）" valuePropName="checked">
+              <Form.Item name="full" label={t('field.full')} valuePropName="checked">
                 <Switch />
               </Form.Item>
             </Col>
@@ -220,12 +223,12 @@ export default function ProfileEditor({ open, profile, onClose, onSaved }: Props
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="keep_alive" label="启用 KeepAlive" valuePropName="checked">
+              <Form.Item name="keep_alive" label={t('field.keepAlive')} valuePropName="checked">
                 <Switch />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="fake_ip" label="FakeIP 模式" valuePropName="checked">
+              <Form.Item name="fake_ip" label={t('field.fakeIp')} valuePropName="checked">
                 <Switch />
               </Form.Item>
             </Col>
@@ -233,23 +236,23 @@ export default function ProfileEditor({ open, profile, onClose, onSaved }: Props
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="quic" label="QUIC 流量" valuePropName="checked">
+              <Form.Item name="quic" label={t('field.quic')} valuePropName="checked">
                 <Switch />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="regex" label="正则过滤模式" valuePropName="checked">
+              <Form.Item name="regex" label={t('field.regex')} valuePropName="checked">
                 <Switch />
               </Form.Item>
             </Col>
           </Row>
 
-          <Form.Item name="threshold" label="地区节点阈值（低于此数不显示分组）">
+          <Form.Item name="threshold" label={t('field.threshold')}>
             <InputNumber min={0} style={{ width: '100%' }} />
           </Form.Item>
 
           <Divider titlePlacement="left" plain>
-            包含订阅
+             {t('section.subscriptions')}
           </Divider>
           {loadingOptions ? (
             <div style={{ textAlign: 'center', padding: 16 }}>
@@ -257,7 +260,7 @@ export default function ProfileEditor({ open, profile, onClose, onSaved }: Props
             </div>
           ) : subs.length === 0 ? (
             <div style={{ color: '#999', padding: 8 }}>
-              暂无订阅，请先在订阅管理中添加
+               {t('empty.noSubscriptions')}
             </div>
           ) : (
             <Form.Item name="subscription_ids">
@@ -272,7 +275,7 @@ export default function ProfileEditor({ open, profile, onClose, onSaved }: Props
           )}
 
           <Divider titlePlacement="left" plain>
-            包含组合订阅
+             {t('section.subscriptionGroups')}
           </Divider>
           {loadingOptions ? (
             <div style={{ textAlign: 'center', padding: 16 }}>
@@ -280,7 +283,7 @@ export default function ProfileEditor({ open, profile, onClose, onSaved }: Props
             </div>
           ) : groups.length === 0 ? (
             <div style={{ color: '#999', padding: 8 }}>
-              暂无组合订阅
+               {t('empty.noGroups')}
             </div>
           ) : (
             <Form.Item name="subscription_group_ids">

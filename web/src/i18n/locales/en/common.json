@@ -1,0 +1,39 @@
+{
+  "app": {
+    "title": "Config Hub"
+  },
+  "menu": {
+    "dashboard": "Dashboard",
+    "subscriptions": "Subscriptions"
+  },
+  "header": {
+    "logout": "Logout"
+  },
+  "button": {
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "save": "Save",
+    "edit": "Edit",
+    "add": "Add",
+    "update": "Update",
+    "create": "Create",
+    "done": "Done",
+    "revoke": "Revoke",
+    "refresh": "Refresh",
+    "copy": "Copy"
+  },
+  "login": {
+    "title": "Config Hub",
+    "usernamePlaceholder": "Username",
+    "usernameRequired": "Please enter your username",
+    "passwordPlaceholder": "Password",
+    "passwordRequired": "Please enter your password",
+    "submit": "Login",
+    "failed": "Login failed"
+  },
+  "groupType": {
+    "select": "手动选择 (select)",
+    "urlTest": "自动选择 (url-test)",
+    "loadBalance": "负载均衡 (load-balance)"
+  }
+}

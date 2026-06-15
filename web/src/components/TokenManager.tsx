@@ -20,6 +20,8 @@ import {
   CopyOutlined,
   KeyOutlined,
 } from '@ant-design/icons';
+import { useTranslation } from '../i18n';
+import i18n from '../i18n';
 
 const { Text } = Typography;
 
@@ -29,10 +31,12 @@ interface TokenManagerProps {
 
 function formatDate(raw: string | null | undefined): string {
   if (!raw) return '\u2014';
-  return new Date(raw).toLocaleString();
+  return new Date(raw).toLocaleString(i18n.language);
 }
 
 export default function TokenManager({ profileId }: TokenManagerProps) {
+  const { t } = useTranslation('profileEditor');
+  const { t: tc } = useTranslation('common');
   const [tokens, setTokens] = useState<Token[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -47,11 +51,11 @@ export default function TokenManager({ profileId }: TokenManagerProps) {
       const data = await api.listTokens(profileId);
       setTokens(data);
     } catch (e: unknown) {
-      messageApi.error(e instanceof Error ? e.message : 'Failed to load tokens');
+      messageApi.error(e instanceof Error ? e.message : t('token.message.loadFailed'));
     } finally {
       setLoading(false);
     }
-  }, [profileId, messageApi]);
+  }, [profileId, messageApi, t]);
 
   useEffect(() => {
     fetchTokens();
@@ -67,9 +71,9 @@ export default function TokenManager({ profileId }: TokenManagerProps) {
       setNewToken(result);
       setTokenName('');
       await fetchTokens();
-      messageApi.success('Token created');
+      messageApi.success(t('token.message.created'));
     } catch (e: unknown) {
-      messageApi.error(e instanceof Error ? e.message : 'Failed to create token');
+      messageApi.error(e instanceof Error ? e.message : t('token.message.createFailed'));
     } finally {
       setCreating(false);
     }
@@ -78,23 +82,23 @@ export default function TokenManager({ profileId }: TokenManagerProps) {
   const handleRevoke = async (tokenId: number) => {
     try {
       await api.revokeToken(profileId, tokenId);
-      messageApi.success('Token revoked');
+      messageApi.success(t('token.message.revoked'));
       await fetchTokens();
     } catch (e: unknown) {
-      messageApi.error(e instanceof Error ? e.message : 'Failed to revoke token');
+      messageApi.error(e instanceof Error ? e.message : t('token.message.revokeFailed'));
     }
   };
 
   const copyToClipboard = async (text: string, label: string) => {
     if (!navigator.clipboard) {
-      messageApi.error('Clipboard not available');
+      messageApi.error(t('token.message.clipboardUnavailable'));
       return;
     }
     try {
       await navigator.clipboard.writeText(text);
-      messageApi.success(`${label} copied!`);
+      messageApi.success(t('token.message.copied', { label }));
     } catch {
-      messageApi.error('Failed to copy');
+      messageApi.error(t('token.message.copyFailed'));
     }
   };
 
@@ -116,46 +120,46 @@ export default function TokenManager({ profileId }: TokenManagerProps) {
 
   const columns = [
     {
-      title: 'Name',
+      title: t('token.table.name'),
       dataIndex: 'name',
       key: 'name',
     },
     {
-      title: 'Created',
+      title: t('token.table.created'),
       dataIndex: 'created_at',
       key: 'created_at',
       render: (v: string) => formatDate(v),
     },
     {
-      title: 'Last Used',
+      title: t('token.table.lastUsed'),
       dataIndex: 'last_used_at',
       key: 'last_used_at',
       render: (v: string | null) => formatDate(v),
     },
     {
-      title: 'Status',
+      title: t('token.table.status'),
       dataIndex: 'revoked',
       key: 'revoked',
       render: (revoked: boolean) =>
         revoked ? (
-          <Tag color="red">Revoked</Tag>
+          <Tag color="red">{t('token.status.revoked')}</Tag>
         ) : (
-          <Tag color="green">Active</Tag>
+          <Tag color="green">{t('token.status.active')}</Tag>
         ),
     },
     {
-      title: 'Actions',
+      title: t('token.table.actions'),
       key: 'actions',
       render: (_: unknown, record: Token) => (
         <Popconfirm
-          title="Revoke this token?"
+          title={t('token.revokeConfirm')}
           onConfirm={() => handleRevoke(record.id)}
-          okText="Revoke"
-          cancelText="Cancel"
+          okText={tc('button.revoke')}
+          cancelText={tc('button.cancel')}
           okButtonProps={{ danger: true }}
         >
           <Button type="link" danger size="small" disabled={record.revoked}>
-            Revoke
+            {tc('button.revoke')}
           </Button>
         </Popconfirm>
       ),
@@ -169,12 +173,12 @@ export default function TokenManager({ profileId }: TokenManagerProps) {
         title={
           <Space>
             <LinkOutlined />
-            <span>分享链接 / Share Links</span>
+            <span>{t('token.title')}</span>
           </Space>
         }
         extra={
           <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenCreate}>
-            Generate New Token
+            {t('token.generateButton')}
           </Button>
         }
       >
@@ -185,24 +189,24 @@ export default function TokenManager({ profileId }: TokenManagerProps) {
           loading={loading}
           size="small"
           pagination={false}
-          locale={{ emptyText: <Empty description="No share links yet" /> }}
+          locale={{ emptyText: <Empty description={t('token.empty')} /> }}
         />
       </Card>
 
       <Modal
-        title="Generate New Token"
+        title={t('token.modalTitle')}
         open={modalOpen}
         onCancel={handleCloseModal}
         footer={
           newToken
             ? [
                 <Button key="done" type="primary" onClick={handleCloseModal}>
-                  Done
+                  {tc('button.done')}
                 </Button>,
               ]
             : [
                 <Button key="cancel" onClick={handleCloseModal}>
-                  Cancel
+                  {tc('button.cancel')}
                 </Button>,
                 <Button
                   key="create"
@@ -211,7 +215,7 @@ export default function TokenManager({ profileId }: TokenManagerProps) {
                   onClick={handleCreate}
                   disabled={!tokenName.trim()}
                 >
-                  Create
+                  {tc('button.create')}
                 </Button>,
               ]
         }
@@ -219,10 +223,10 @@ export default function TokenManager({ profileId }: TokenManagerProps) {
         {!newToken ? (
           <div style={{ padding: '8px 0' }}>
             <Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
-              Give this token a name to identify its purpose.
+              {t('token.formHint')}
             </Text>
             <Input
-              placeholder="e.g. My iPhone, Team Access"
+              placeholder={t('token.placeholder')}
               value={tokenName}
               onChange={e => setTokenName(e.target.value)}
               onPressEnter={handleCreate}
@@ -233,13 +237,13 @@ export default function TokenManager({ profileId }: TokenManagerProps) {
         ) : (
           <div style={{ padding: '8px 0' }}>
             <Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
-              Token created successfully. Copy it now \u2014 it won&apos;t be shown again.
+              {t('token.createdHint')}
             </Text>
 
             <div style={{ marginBottom: 20 }}>
               <Text strong style={{ display: 'block', marginBottom: 6 }}>
                 <KeyOutlined style={{ marginRight: 6 }} />
-                Raw Token
+                {t('token.rawToken')}
               </Text>
               <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
                 <Text
@@ -259,7 +263,7 @@ export default function TokenManager({ profileId }: TokenManagerProps) {
                   size="small"
                   onClick={() => copyToClipboard(newToken.token, 'Token')}
                 >
-                  Copy
+                  {tc('button.copy')}
                 </Button>
               </div>
             </div>
@@ -267,7 +271,7 @@ export default function TokenManager({ profileId }: TokenManagerProps) {
             <div>
               <Text strong style={{ display: 'block', marginBottom: 6 }}>
                 <LinkOutlined style={{ marginRight: 6 }} />
-                Share URL
+                {t('token.shareUrl')}
               </Text>
               <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
                 <Text
@@ -287,7 +291,7 @@ export default function TokenManager({ profileId }: TokenManagerProps) {
                   size="small"
                   onClick={() => copyToClipboard(shareUrl, 'URL')}
                 >
-                  Copy
+                  {tc('button.copy')}
                 </Button>
               </div>
             </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../api/client';
+import { useTranslation } from '../i18n';
 import type { Profile, ProxyGroup, RuleEntry } from '../types';
 import TokenManager from '../components/TokenManager';
 import ProfileEditor from '../components/ProfileEditor';
@@ -46,12 +47,6 @@ import { CSS } from '@dnd-kit/utilities';
 
 const { Text } = Typography;
 
-const GROUP_TYPE_LABEL: Record<number, string> = {
-  0: '手动选择 (select)',
-  1: '自动选择 (url-test)',
-  2: '负载均衡 (load-balance)',
-};
-
 const GROUP_TYPE_COLORS: Record<string, string> = {
   select: 'blue',
   'url-test': 'green',
@@ -89,6 +84,8 @@ export default function Dashboard() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const { token: themeToken } = theme.useToken();
+  const { t } = useTranslation('dashboard');
+  const { t: tc } = useTranslation('common');
 
   const loadProfiles = useCallback(async () => {
     setLoadingProfiles(true);
@@ -96,11 +93,11 @@ export default function Dashboard() {
       const data = await api.get<Profile[]>('/api/profiles');
       setProfiles(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Request failed');
+      setError(e instanceof Error ? e.message : t('error.requestFailed'));
     } finally {
       setLoadingProfiles(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     loadProfiles();
@@ -126,7 +123,7 @@ export default function Dashboard() {
           setYaml(y);
         }
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'Request failed');
+        if (!cancelled) setError(e instanceof Error ? e.message : t('error.requestFailed'));
       } finally {
         if (!cancelled) setLoadingProfile(false);
       }
@@ -134,7 +131,7 @@ export default function Dashboard() {
 
     fetchProfile();
     return () => { cancelled = true; };
-  }, [selectedId]);
+  }, [selectedId, t]);
 
   const sensors = useSensors(useSensor(PointerSensor));
 
@@ -179,7 +176,7 @@ export default function Dashboard() {
           title={
             <Space>
               <FileTextOutlined />
-              <span>Profiles</span>
+              <span>{t('profiles.title')}</span>
               <Button
                 type="text"
                 size="small"
@@ -205,7 +202,7 @@ export default function Dashboard() {
               <Spin />
             </div>
           ) : profiles.length === 0 ? (
-            <Empty description="No profiles found" style={{ padding: 40 }} />
+            <Empty description={t('profiles.empty')} style={{ padding: 40 }} />
           ) : (
             <List
               dataSource={profiles}
@@ -235,7 +232,14 @@ export default function Dashboard() {
                     }
                     description={
                       <Text type="secondary" style={{ fontSize: 12 }} ellipsis>
-                        {GROUP_TYPE_LABEL[item.group_type] ?? 'No description'}
+                        {(() => {
+                          const labels: Record<number, string> = {
+                            0: tc('groupType.select'),
+                            1: tc('groupType.urlTest'),
+                            2: tc('groupType.loadBalance'),
+                          };
+                          return labels[item.group_type] ?? t('profiles.noDescription');
+                        })()}
                       </Text>
                     }
                   />
@@ -251,7 +255,7 @@ export default function Dashboard() {
                       }}
                     />
                     <Popconfirm
-                      title="Delete this profile?"
+                      title={t('profiles.deleteConfirm')}
                       onConfirm={() => {
                         api.deleteProfile(item.id).then(() => {
                           loadProfiles();
@@ -262,11 +266,11 @@ export default function Dashboard() {
                             setRules([]);
                             setYaml('');
                           }
-                        }).catch(e => setError(e instanceof Error ? e.message : 'Delete failed'));
+                        }).catch(e => setError(e instanceof Error ? e.message : t('error.deleteFailed')));
                       }}
-                      okText="Delete"
+                      okText={tc('button.delete')}
                       okType="danger"
-                      cancelText="Cancel"
+                      cancelText={tc('button.cancel')}
                     >
                       <Button
                         type="text"
@@ -298,7 +302,7 @@ export default function Dashboard() {
 
         {!selectedId && !error ? (
           <Card style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Empty description="Select a profile to view its configuration" />
+            <Empty description={t('placeholder.selectProfile')} />
           </Card>
         ) : (
           <>
@@ -307,7 +311,7 @@ export default function Dashboard() {
               title={
                 <Space>
                   <ClusterOutlined />
-                  <span>Proxy Groups</span>
+                  <span>{t('proxyGroups.title')}</span>
                   {profile && (
                     <Tag color="blue">{groups.length}</Tag>
                   )}
@@ -321,7 +325,7 @@ export default function Dashboard() {
                   <Spin />
                 </div>
               ) : groups.length === 0 ? (
-                <Empty description="No proxy groups" style={{ padding: 40 }} />
+                <Empty description={t('proxyGroups.empty')} style={{ padding: 40 }} />
               ) : (
                 <div style={{ overflow: 'auto', flex: 1 }}>
                   <DndContext
@@ -347,7 +351,7 @@ export default function Dashboard() {
               title={
                 <Space>
                   <SafetyOutlined />
-                  <span>Rules</span>
+                  <span>{t('rules.title')}</span>
                   {profile && (
                     <Tag color="green">{rules.length}</Tag>
                   )}
@@ -370,7 +374,7 @@ export default function Dashboard() {
                   <Spin />
                 </div>
               ) : rules.length === 0 ? (
-                <Empty description="No rules" style={{ padding: 40 }} />
+                <Empty description={t('rules.empty')} style={{ padding: 40 }} />
               ) : (
                 <div style={{ overflow: 'auto', flex: 1, minHeight: 0 }}>
                   <List
@@ -410,7 +414,7 @@ export default function Dashboard() {
           title={
             <Space>
               <CodeOutlined />
-              <span>YAML Preview</span>
+              <span>{t('yaml.title')}</span>
             </Space>
           }
           styles={{
@@ -448,7 +452,7 @@ export default function Dashboard() {
             </pre>
           ) : (
             <Empty
-              description="Select a profile to preview"
+              description={t('yaml.empty')}
               style={{ padding: 40 }}
             />
           )}

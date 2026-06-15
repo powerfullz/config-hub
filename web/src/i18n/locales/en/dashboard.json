@@ -1,0 +1,27 @@
+{
+  "profiles": {
+    "title": "Profiles",
+    "empty": "No profiles found",
+    "deleteConfirm": "Delete this profile?",
+    "noDescription": "No description"
+  },
+  "proxyGroups": {
+    "title": "Proxy Groups",
+    "empty": "No proxy groups"
+  },
+  "rules": {
+    "title": "Rules",
+    "empty": "No rules"
+  },
+  "yaml": {
+    "title": "YAML Preview",
+    "empty": "Select a profile to preview"
+  },
+  "placeholder": {
+    "selectProfile": "Select a profile to view its configuration"
+  },
+  "error": {
+    "requestFailed": "Request failed",
+    "deleteFailed": "Delete failed"
+  }
+}

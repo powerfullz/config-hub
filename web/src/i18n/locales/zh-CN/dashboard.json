@@ -1,0 +1,27 @@
+{
+  "profiles": {
+    "title": "覆写方案",
+    "empty": "暂无方案",
+    "deleteConfirm": "确定删除此方案？",
+    "noDescription": "无描述"
+  },
+  "proxyGroups": {
+    "title": "代理组",
+    "empty": "暂无代理组"
+  },
+  "rules": {
+    "title": "规则",
+    "empty": "暂无规则"
+  },
+  "yaml": {
+    "title": "YAML 预览",
+    "empty": "请选择一个方案进行预览"
+  },
+  "placeholder": {
+    "selectProfile": "请选择一个方案查看其配置"
+  },
+  "error": {
+    "requestFailed": "请求失败",
+    "deleteFailed": "删除失败"
+  }
+}

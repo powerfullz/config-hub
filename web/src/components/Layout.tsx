@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Layout as AntLayout, Menu, Typography, Button, theme } from 'antd';
 import {
@@ -6,28 +7,37 @@ import {
   LogoutOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../hooks/useAuth';
+import i18n, { useTranslation } from '../i18n';
 
 const { Header, Content } = AntLayout;
 const { Text } = Typography;
 
-const menuItems = [
-  {
-    key: '/',
-    icon: <DashboardOutlined />,
-    label: 'Dashboard',
-  },
-  {
-    key: '/subs',
-    icon: <AppstoreOutlined />,
-    label: 'Subscriptions',
-  },
-];
-
 export default function Layout({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation('common');
   const { user, logout, isLoggedIn } = useAuth();
+  const [lang, setLang] = useState(i18n.language);
+
+  useEffect(() => {
+    const handler = (lng: string) => setLang(lng);
+    i18n.on('languageChanged', handler);
+    return () => { i18n.off('languageChanged', handler); };
+  }, []);
   const navigate = useNavigate();
   const location = useLocation();
   const { token: themeToken } = theme.useToken();
+
+  const menuItems = [
+    {
+      key: '/',
+      icon: <DashboardOutlined />,
+      label: t('menu.dashboard'),
+    },
+    {
+      key: '/subs',
+      icon: <AppstoreOutlined />,
+      label: t('menu.subscriptions'),
+    },
+  ];
 
   const handleLogout = () => {
     logout();
@@ -69,7 +79,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               letterSpacing: '-0.02em',
             }}
           >
-            Config Hub
+            {t('app.title')}
           </Text>
         </div>
 
@@ -86,6 +96,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         />
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Button
+            type="text"
+            size="small"
+            style={{ fontWeight: lang === 'zh-CN' ? 600 : 400, color: lang === 'zh-CN' ? '#1677ff' : undefined }}
+            onClick={() => i18n.changeLanguage('zh-CN')}
+          >
+            中
+          </Button>
+          <Button
+            type="text"
+            size="small"
+            style={{ fontWeight: lang === 'en' ? 600 : 400, color: lang === 'en' ? '#1677ff' : undefined }}
+            onClick={() => i18n.changeLanguage('en')}
+          >
+            EN
+          </Button>
           <Text type="secondary" style={{ fontSize: 14 }}>
             {user?.username}
           </Text>
@@ -94,7 +120,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             icon={<LogoutOutlined />}
             onClick={handleLogout}
           >
-            Logout
+            {t('header.logout')}
           </Button>
         </div>
       </Header>

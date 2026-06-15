@@ -3,6 +3,7 @@ import { useNavigate, Navigate } from 'react-router-dom';
 import { Form, Input, Button, Card, Typography, Alert, Space } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useAuth } from '../hooks/useAuth';
+import { useTranslation } from '../i18n';
 
 const { Title } = Typography;
 
@@ -13,6 +14,7 @@ interface LoginFormValues {
 
 export default function Login() {
   const { login, isLoggedIn } = useAuth();
+  const { t } = useTranslation('common');
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -26,7 +28,7 @@ export default function Login() {
       await login(values.username, values.password);
       navigate('/');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      setError(err instanceof Error ? err.message : t('login.failed'));
     } finally {
       setLoading(false);
     }
@@ -43,7 +45,7 @@ export default function Login() {
       <Card style={{ width: 400 }}>
         <Space orientation="vertical" size="large" style={{ width: '100%' }}>
           <Title level={2} style={{ textAlign: 'center', margin: 0 }}>
-            Config Hub
+            {t('login.title')}
           </Title>
 
           {error && (
@@ -64,21 +66,21 @@ export default function Login() {
           >
             <Form.Item
               name="username"
-              rules={[{ required: true, message: 'Please enter your username' }]}
+              rules={[{ required: true, message: t('login.usernameRequired') }]}
             >
               <Input
                 prefix={<UserOutlined />}
-                placeholder="Username"
+                placeholder={t('login.usernamePlaceholder')}
               />
             </Form.Item>
 
             <Form.Item
               name="password"
-              rules={[{ required: true, message: 'Please enter your password' }]}
+              rules={[{ required: true, message: t('login.passwordRequired') }]}
             >
               <Input.Password
                 prefix={<LockOutlined />}
-                placeholder="Password"
+                placeholder={t('login.passwordPlaceholder')}
               />
             </Form.Item>
 
@@ -89,7 +91,7 @@ export default function Login() {
                 loading={loading}
                 block
               >
-                Login
+                {t('login.submit')}
               </Button>
             </Form.Item>
           </Form>

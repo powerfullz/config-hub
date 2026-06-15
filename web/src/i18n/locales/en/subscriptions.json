@@ -1,0 +1,59 @@
+{
+  "title": "Subscriptions",
+  "addButton": "Add Subscription",
+  "column": {
+    "name": "Name",
+    "type": "Type",
+    "server": "Server",
+    "port": "Port",
+    "country": "Country",
+    "url": "URL",
+    "nodes": "Nodes",
+    "enabled": "Enabled",
+    "lastFetched": "Last Fetched",
+    "actions": "Actions"
+  },
+  "tooltip": {
+    "refresh": "Refresh",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "modal": {
+    "titleEdit": "Edit Subscription",
+    "titleAdd": "Add Subscription",
+    "okUpdate": "Update",
+    "okAdd": "Add"
+  },
+  "form": {
+    "name": "Name",
+    "nameRequired": "Please enter a name",
+    "namePlaceholder": "Subscription name",
+    "url": "URL",
+    "urlRequired": "Please enter a URL",
+    "urlInvalid": "Please enter a valid URL",
+    "urlPlaceholder": "https://example.com/subscription",
+    "userAgent": "User-Agent (optional)",
+    "userAgentPlaceholder": "Default: random Chrome UA",
+    "fetchProxy": "Fetch Proxy (optional)",
+    "fetchProxyPlaceholder": "e.g. http://127.0.0.1:7890 or socks5://127.0.0.1:7891"
+  },
+  "deleteConfirm": "Delete this subscription?",
+  "status": {
+    "loadingNodes": "Loading nodes...",
+    "noNodes": "No nodes",
+    "noSubs": "No subscriptions",
+    "never": "Never",
+    "totalSubscriptions": "Total {{total}} subscriptions"
+  },
+  "message": {
+    "loadFailed": "Failed to load subscriptions",
+    "updated": "Subscription updated",
+    "added": "Subscription added",
+    "deleted": "Subscription deleted",
+    "deleteFailed": "Failed to delete subscription",
+    "refreshed": "Refreshed: {{count}} nodes",
+    "refreshFailed": "Failed to refresh subscription",
+    "toggleFailed": "Failed to toggle subscription",
+    "loadNodesFailed": "Failed to load nodes"
+  }
+}
