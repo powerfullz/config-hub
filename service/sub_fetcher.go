@@ -10,7 +10,24 @@ import (
 	"time"
 
 	"config-hub/internal/convert"
+	"gopkg.in/yaml.v3"
 )
+
+// tryParseYAMLProxies attempts to parse body as a mihomo YAML config
+// and extract nodes from the `proxies` field.
+// Returns (nodes, true) on success, (nil, false) if the body is not valid YAML or has no proxies.
+func tryParseYAMLProxies(body []byte) ([]map[string]any, bool) {
+	var doc struct {
+		Proxies []map[string]any `yaml:"proxies"`
+	}
+	if err := yaml.Unmarshal(body, &doc); err != nil {
+		return nil, false
+	}
+	if len(doc.Proxies) == 0 {
+		return nil, false
+	}
+	return doc.Proxies, true
+}
 
 // FetchResult holds the parsed subscription result.
 type FetchResult struct {
@@ -101,9 +118,15 @@ func fetchOnce(rawURL, ua, proxyURL string) (*FetchResult, error) {
 		return nil, fmt.Errorf("read body: %w", err)
 	}
 
-	nodes, err := convert.ConvertsV2Ray(body)
-	if err != nil {
-		return nil, fmt.Errorf("parse subscription: %w", err)
+	var nodes []map[string]any
+	if yamlNodes, ok := tryParseYAMLProxies(body); ok {
+		nodes = yamlNodes
+	} else {
+		var err error
+		nodes, err = convert.ConvertsV2Ray(body)
+		if err != nil {
+			return nil, fmt.Errorf("parse subscription: %w", err)
+		}
 	}
 
 	result := &FetchResult{Nodes: nodes}
