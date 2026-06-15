@@ -1,3 +1,5 @@
+import type { Profile } from '../types';
+
 const BASE = '';
 
 export interface ApiError {
@@ -84,6 +86,20 @@ class ApiClient {
 
   async revokeToken(profileId: number, tokenId: number): Promise<void> {
     await this.delete(`/api/profiles/${profileId}/tokens/${tokenId}`);
+  }
+
+  // ── Profile CRUD ──────────────────────────────────────────────────
+
+  createProfile(data: Record<string, unknown>) {
+    return this.post<Profile>('/api/profiles', data);
+  }
+
+  updateProfile(id: number, data: Record<string, unknown>) {
+    return this.put<Profile>(`/api/profiles/${id}`, data);
+  }
+
+  deleteProfile(id: number) {
+    return this.delete<{ message: string }>(`/api/profiles/${id}`);
   }
 }
 

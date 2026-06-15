@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { api } from '../api/client';
 import type { Profile, ProxyGroup, RuleEntry } from '../types';
 import TokenManager from '../components/TokenManager';
+import ProfileEditor from '../components/ProfileEditor';
 import {
   Card,
   Typography,
@@ -12,6 +13,8 @@ import {
   Alert,
   theme,
   Spin,
+  Popconfirm,
+  Button,
 } from 'antd';
 import {
   HolderOutlined,
@@ -21,6 +24,9 @@ import {
   CodeOutlined,
   SwapOutlined,
   GlobalOutlined,
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons';
 import {
   DndContext,
@@ -71,17 +77,25 @@ export default function Dashboard() {
   const [error, setError] = useState('');
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   const [loadingProfile, setLoadingProfile] = useState(false);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const { token: themeToken } = theme.useToken();
 
-  useEffect(() => {
-    let cancelled = false;
-    api
-      .get<Profile[]>('/api/profiles')
-      .then(data => { if (!cancelled) setProfiles(data); })
-      .catch(e => { if (!cancelled) setError(e.message); })
-      .finally(() => { if (!cancelled) setLoadingProfiles(false); });
-    return () => { cancelled = true; };
+  const loadProfiles = useCallback(async () => {
+    setLoadingProfiles(true);
+    try {
+      const data = await api.get<Profile[]>('/api/profiles');
+      setProfiles(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Request failed');
+    } finally {
+      setLoadingProfiles(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadProfiles();
+  }, [loadProfiles]);
 
   useEffect(() => {
     if (!selectedId) return;
@@ -157,6 +171,15 @@ export default function Dashboard() {
             <Space>
               <FileTextOutlined />
               <span>Profiles</span>
+              <Button
+                type="text"
+                size="small"
+                icon={<PlusOutlined />}
+                onClick={() => {
+                  setEditingProfile(null);
+                  setEditorOpen(true);
+                }}
+              />
             </Space>
           }
           styles={{
@@ -207,6 +230,44 @@ export default function Dashboard() {
                       </Text>
                     }
                   />
+                  <Space style={{ flexShrink: 0, marginLeft: 8 }}>
+                    <Button
+                      type="text"
+                      size="small"
+                      icon={<EditOutlined />}
+                      onClick={e => {
+                        e.stopPropagation();
+                        setEditingProfile(item);
+                        setEditorOpen(true);
+                      }}
+                    />
+                    <Popconfirm
+                      title="Delete this profile?"
+                      onConfirm={() => {
+                        api.deleteProfile(item.id).then(() => {
+                          loadProfiles();
+                          if (selectedId === item.id) {
+                            setSelectedId(null);
+                            setProfile(null);
+                            setGroups([]);
+                            setRules([]);
+                            setYaml('');
+                          }
+                        }).catch(e => setError(e instanceof Error ? e.message : 'Delete failed'));
+                      }}
+                      okText="Delete"
+                      okType="danger"
+                      cancelText="Cancel"
+                    >
+                      <Button
+                        type="text"
+                        size="small"
+                        danger
+                        icon={<DeleteOutlined />}
+                        onClick={e => e.stopPropagation()}
+                      />
+                    </Popconfirm>
+                  </Space>
                 </List.Item>
               )}
             />
@@ -384,6 +445,20 @@ export default function Dashboard() {
           )}
         </Card>
       </aside>
+
+      <ProfileEditor
+        open={editorOpen}
+        profile={editingProfile}
+        onClose={() => {
+          setEditorOpen(false);
+          setEditingProfile(null);
+        }}
+        onSaved={() => {
+          setEditorOpen(false);
+          setEditingProfile(null);
+          loadProfiles();
+        }}
+      />
     </div>
   );
 }
