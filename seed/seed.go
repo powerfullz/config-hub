@@ -84,6 +84,8 @@ func Run() error {
 		return err
 	}
 
+	slog.Info("=== Server Initialised, Credentials: ===")
+	slog.Info("=== " + "account: " + adminUser.Username + "  password: " + password + " ===")
 	slog.Info("Seed data created",
 		"user", adminUser.Username,
 		"password", password,
