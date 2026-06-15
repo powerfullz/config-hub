@@ -43,6 +43,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Backfill missing icon fields for existing proxy groups.
+	seed.BackfillGroupIcons()
+
 	// Initialize SSRF-safe HTTP client for subscription fetches
 	service.InitSafeHTTPClient()
 

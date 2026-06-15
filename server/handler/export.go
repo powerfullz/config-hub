@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -48,6 +49,7 @@ func ExportConfig(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": err.Error(), "code": 500})
 	}
 
-	c.Response().Header().Set("Content-Disposition", "attachment; filename=config.yaml")
+	filename := sanitizeFilename(resolveFilename(uint(id)))
+	c.Response().Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 	return c.Blob(http.StatusOK, "text/plain; charset=utf-8", yamlData)
 }

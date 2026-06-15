@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"config-hub/db"
 	"config-hub/model"
@@ -11,6 +12,35 @@ import (
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 )
+
+// resolveFilename loads a profile and returns the export filename.
+// It checks profile.FileName first, then falls back to profile.Name + ".yaml",
+// and finally to "config.yaml" if the profile cannot be loaded.
+func resolveFilename(profileID uint) string {
+	defaultName := "config.yaml"
+	var profile model.Profile
+	if err := db.DB.First(&profile, profileID).Error; err != nil {
+		return defaultName
+	}
+	if profile.FileName != "" {
+		return profile.FileName
+	}
+	if profile.Name != "" {
+		return profile.Name + ".yaml"
+	}
+	return defaultName
+}
+
+// sanitizeFilename removes characters that could break the Content-Disposition header.
+func sanitizeFilename(name string) string {
+	var b strings.Builder
+	for _, r := range name {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '_' || r == '-' || r == '.' || r == ' ' || (r >= 0x4e00 && r <= 0x9fff) {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
 
 // ListProfiles GET /api/profiles
 // Returns all profiles for the authenticated user.
@@ -37,8 +67,9 @@ type createProfilePayload struct {
 	KeepAlive *bool  `json:"keep_alive"`
 	FakeIP    *bool  `json:"fake_ip"`
 	QUIC      *bool  `json:"quic"`
-	Regex     *bool  `json:"regex"`
-	Threshold *int   `json:"threshold"`
+	Regex     *bool   `json:"regex"`
+	Threshold *int    `json:"threshold"`
+	FileName  *string `json:"file_name"`
 }
 
 // CreateProfile POST /api/profiles
@@ -87,6 +118,9 @@ func CreateProfile(c echo.Context) error {
 	}
 	if input.Threshold != nil {
 		profile.Threshold = *input.Threshold
+	}
+	if input.FileName != nil {
+		profile.FileName = *input.FileName
 	}
 
 	tx := db.DB.Begin()
@@ -154,6 +188,7 @@ type updateProfilePayload struct {
 	QUIC      *bool   `json:"quic"`
 	Regex     *bool   `json:"regex"`
 	Threshold *int    `json:"threshold"`
+	FileName  *string `json:"file_name"`
 }
 
 // UpdateProfile PUT /api/profiles/:id
@@ -206,6 +241,9 @@ func UpdateProfile(c echo.Context) error {
 	}
 	if input.Threshold != nil {
 		profile.Threshold = *input.Threshold
+	}
+	if input.FileName != nil {
+		profile.FileName = *input.FileName
 	}
 
 	if err := db.DB.Save(&profile).Error; err != nil {

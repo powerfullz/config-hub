@@ -23,6 +23,7 @@ import {
   SafetyOutlined,
   CodeOutlined,
   SwapOutlined,
+  SwapRightOutlined,
   GlobalOutlined,
   PlusOutlined,
   EditOutlined,
@@ -68,6 +69,8 @@ function getGroupTypeIcon(type: string) {
       return <SwapOutlined />;
     case 'url-test':
       return <GlobalOutlined />;
+    case 'fallback':
+      return <SwapRightOutlined />;
     default:
       return <ClusterOutlined />;
   }
@@ -500,6 +503,16 @@ function SortableGroup({ group }: { group: ProxyGroup }) {
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <HolderOutlined style={{ color: themeToken.colorTextQuaternary, fontSize: 14 }} />
+      {group.icon && (
+        <img
+          src={group.icon}
+          alt=""
+          style={{ width: 20, height: 20, borderRadius: 4, flexShrink: 0 }}
+          onError={(e) => {
+            (e.target as HTMLImageElement).style.display = 'none';
+          }}
+        />
+      )}
       <Text strong style={{ flex: 1, fontSize: 13 }}>
         {group.name}
       </Text>

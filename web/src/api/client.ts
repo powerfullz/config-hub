@@ -26,6 +26,7 @@ class ApiClient {
 
     if (res.status === 401) {
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';
       }
@@ -67,6 +68,14 @@ class ApiClient {
     const headers: Record<string, string> = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
     const res = await fetch(`${BASE}${path}`, { headers });
+    if (res.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+      throw new Error('Unauthorized');
+    }
     if (!res.ok) throw new Error('Request failed');
     return res.text();
   }

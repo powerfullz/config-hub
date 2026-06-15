@@ -2,6 +2,7 @@ package service
 
 import (
 	"regexp"
+	"sort"
 	"sync"
 
 	"config-hub/seed"
@@ -117,16 +118,33 @@ func ClassifyNodes(nodes []map[string]any) *ClassificationResult {
 func GetCountryGroupNames(countries []string) []string {
 	compileMatchers()
 
-	countrySet := make(map[string]bool, len(countries))
-	for _, c := range countries {
-		countrySet[c] = true
+	// Build weight lookup.
+	weightMap := make(map[string]int, len(seed.CountriesMeta))
+	for _, c := range seed.CountriesMeta {
+		weightMap[c.Name] = c.Weight
 	}
 
-	var names []string
-	for _, meta := range seed.CountriesMeta {
-		if countrySet[meta.Name] {
-			names = append(names, meta.Name+seed.NodeSuffix)
+	// Sort input countries by weight (Weight: 0 sorts last).
+	sorted := make([]string, len(countries))
+	copy(sorted, countries)
+	sort.Slice(sorted, func(i, j int) bool {
+		wi := weightMap[sorted[i]]
+		wj := weightMap[sorted[j]]
+		if wi == 0 {
+			wi = 9999
 		}
+		if wj == 0 {
+			wj = 9999
+		}
+		if wi != wj {
+			return wi < wj
+		}
+		return sorted[i] < sorted[j]
+	})
+
+	names := make([]string, len(sorted))
+	for i, c := range sorted {
+		names[i] = c + seed.NodeSuffix
 	}
 	return names
 }

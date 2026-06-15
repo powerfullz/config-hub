@@ -16,6 +16,7 @@ type Profile struct {
 	QUIC      bool   `gorm:"default:false" json:"quic"`     // 允许 QUIC 流量
 	Regex     bool   `gorm:"default:false" json:"regex"`    // 使用正则过滤模式（include-all + filter）
 	Threshold int    `gorm:"default:0" json:"threshold"`     // 地区节点数量阈值
+	FileName    string `gorm:"default:''" json:"file_name"` // 自定义导出文件名
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 

@@ -49,65 +49,65 @@ func DefaultProxyGroups(profileID uint) []model.ProxyGroup {
 
 	groups := []model.ProxyGroup{
 		// 1. 选择代理
-		{ProfileID: profileID, Name: PGSelect, Type: "select", SortOrder: next(), Proxies: selectProxies},
+		{ProfileID: profileID, Name: PGSelect, Type: "select", SortOrder: next(), Proxies: selectProxies, Icon: GroupIcons[PGSelect]},
 		// 2. 手动选择
-		{ProfileID: profileID, Name: PGManual, Type: "select", SortOrder: next(), Proxies: manualProxies, IncludeAll: true},
+		{ProfileID: profileID, Name: PGManual, Type: "select", SortOrder: next(), Proxies: manualProxies, IncludeAll: true, Icon: GroupIcons[PGManual]},
 		// 3. 静态资源
-		{ProfileID: profileID, Name: PGStaticResources, Type: "select", SortOrder: next(), Proxies: svcProxies},
+		{ProfileID: profileID, Name: PGStaticResources, Type: "select", SortOrder: next(), Proxies: svcProxies, Icon: GroupIcons[PGStaticResources]},
 		// 4. AI服务
-		{ProfileID: profileID, Name: PGAIService, Type: "select", SortOrder: next(), Proxies: svcProxies},
+		{ProfileID: profileID, Name: PGAIService, Type: "select", SortOrder: next(), Proxies: svcProxies, Icon: GroupIcons[PGAIService]},
 		// 5. 加密货币
-		{ProfileID: profileID, Name: PGCrypto, Type: "select", SortOrder: next(), Proxies: svcProxies},
+		{ProfileID: profileID, Name: PGCrypto, Type: "select", SortOrder: next(), Proxies: svcProxies, Icon: GroupIcons[PGCrypto]},
 		// 6. 苹果服务
-		{ProfileID: profileID, Name: PGApple, Type: "select", SortOrder: next(), Proxies: svcProxies},
+		{ProfileID: profileID, Name: PGApple, Type: "select", SortOrder: next(), Proxies: svcProxies, Icon: GroupIcons[PGApple]},
 		// 7. 谷歌服务
-		{ProfileID: profileID, Name: PGGoogle, Type: "select", SortOrder: next(), Proxies: svcProxies},
+		{ProfileID: profileID, Name: PGGoogle, Type: "select", SortOrder: next(), Proxies: svcProxies, Icon: GroupIcons[PGGoogle]},
 		// 8. 微软服务
-		{ProfileID: profileID, Name: PGMicrosoft, Type: "select", SortOrder: next(), Proxies: svcProxies},
+		{ProfileID: profileID, Name: PGMicrosoft, Type: "select", SortOrder: next(), Proxies: svcProxies, Icon: GroupIcons[PGMicrosoft]},
 		// 9. Xbox
-		{ProfileID: profileID, Name: PGXbox, Type: "select", SortOrder: next(), Proxies: svcProxies},
+		{ProfileID: profileID, Name: PGXbox, Type: "select", SortOrder: next(), Proxies: svcProxies, Icon: GroupIcons[PGXbox]},
 		// 10. Github
-		{ProfileID: profileID, Name: PGGithub, Type: "select", SortOrder: next(), Proxies: svcProxies},
+		{ProfileID: profileID, Name: PGGithub, Type: "select", SortOrder: next(), Proxies: svcProxies, Icon: GroupIcons[PGGithub]},
 		// 11. 哔哩哔哩
-		{ProfileID: profileID, Name: PGBilibili, Type: "select", SortOrder: next(), Proxies: directFirstProxies},
+		{ProfileID: profileID, Name: PGBilibili, Type: "select", SortOrder: next(), Proxies: directFirstProxies, Icon: GroupIcons[PGBilibili]},
 		// 12. 巴哈姆特
-		{ProfileID: profileID, Name: PGBahamut, Type: "select", SortOrder: next(), Proxies: svcProxies},
+		{ProfileID: profileID, Name: PGBahamut, Type: "select", SortOrder: next(), Proxies: svcProxies, Icon: GroupIcons[PGBahamut]},
 		// 13. Youtube
-		{ProfileID: profileID, Name: PGYoutube, Type: "select", SortOrder: next(), Proxies: svcProxies},
+		{ProfileID: profileID, Name: PGYoutube, Type: "select", SortOrder: next(), Proxies: svcProxies, Icon: GroupIcons[PGYoutube]},
 		// 14. Twitch
-		{ProfileID: profileID, Name: PGTwitch, Type: "select", SortOrder: next(), Proxies: svcProxies},
+		{ProfileID: profileID, Name: PGTwitch, Type: "select", SortOrder: next(), Proxies: svcProxies, Icon: GroupIcons[PGTwitch]},
 		// 15. Netflix
-		{ProfileID: profileID, Name: PGNetflix, Type: "select", SortOrder: next(), Proxies: svcProxies},
+		{ProfileID: profileID, Name: PGNetflix, Type: "select", SortOrder: next(), Proxies: svcProxies, Icon: GroupIcons[PGNetflix]},
 		// 16. TikTok
-		{ProfileID: profileID, Name: PGTikTok, Type: "select", SortOrder: next(), Proxies: svcProxies},
+		{ProfileID: profileID, Name: PGTikTok, Type: "select", SortOrder: next(), Proxies: svcProxies, Icon: GroupIcons[PGTikTok]},
 		// 17. Spotify
-		{ProfileID: profileID, Name: PGSpotify, Type: "select", SortOrder: next(), Proxies: svcProxies},
+		{ProfileID: profileID, Name: PGSpotify, Type: "select", SortOrder: next(), Proxies: svcProxies, Icon: GroupIcons[PGSpotify]},
 		// 18. Telegram
-		{ProfileID: profileID, Name: PGTelegram, Type: "select", SortOrder: next(), Proxies: svcProxies},
+		{ProfileID: profileID, Name: PGTelegram, Type: "select", SortOrder: next(), Proxies: svcProxies, Icon: GroupIcons[PGTelegram]},
 		// 19. Twitter
-		{ProfileID: profileID, Name: PGTwitter, Type: "select", SortOrder: next(), Proxies: svcProxies},
+		{ProfileID: profileID, Name: PGTwitter, Type: "select", SortOrder: next(), Proxies: svcProxies, Icon: GroupIcons[PGTwitter]},
 		// 20. 新浪微博
-		{ProfileID: profileID, Name: PGWeibo, Type: "select", SortOrder: next(), Proxies: directFirstProxies, IncludeAll: true},
+		{ProfileID: profileID, Name: PGWeibo, Type: "select", SortOrder: next(), Proxies: directFirstProxies, IncludeAll: true, Icon: GroupIcons[PGWeibo]},
 		// 21. Truth Social
-		{ProfileID: profileID, Name: PGTruthSocial, Type: "select", SortOrder: next(), Proxies: svcProxies},
+		{ProfileID: profileID, Name: PGTruthSocial, Type: "select", SortOrder: next(), Proxies: svcProxies, Icon: GroupIcons[PGTruthSocial]},
 		// 22. E-Hentai
-		{ProfileID: profileID, Name: PGEHentai, Type: "select", SortOrder: next(), Proxies: svcProxies},
+		{ProfileID: profileID, Name: PGEHentai, Type: "select", SortOrder: next(), Proxies: svcProxies, Icon: GroupIcons[PGEHentai]},
 		// 23. PikPak网盘
-		{ProfileID: profileID, Name: PGPikPak, Type: "select", SortOrder: next(), Proxies: svcProxies},
+		{ProfileID: profileID, Name: PGPikPak, Type: "select", SortOrder: next(), Proxies: svcProxies, Icon: GroupIcons[PGPikPak]},
 		// 24. 搜狗输入法
-		{ProfileID: profileID, Name: PGSogouInput, Type: "select", SortOrder: next(), Proxies: sogouProxies},
+		{ProfileID: profileID, Name: PGSogouInput, Type: "select", SortOrder: next(), Proxies: sogouProxies, Icon: GroupIcons[PGSogouInput]},
 		// 25. SSH
-		{ProfileID: profileID, Name: PGSSH, Type: "select", SortOrder: next(), Proxies: svcProxies},
+		{ProfileID: profileID, Name: PGSSH, Type: "select", SortOrder: next(), Proxies: svcProxies, Icon: GroupIcons[PGSSH]},
 		// 26. Final
-		{ProfileID: profileID, Name: PGFinal, Type: "select", SortOrder: next(), Proxies: finalProxies},
+		{ProfileID: profileID, Name: PGFinal, Type: "select", SortOrder: next(), Proxies: finalProxies, Icon: GroupIcons[PGFinal]},
 		// 27. 自动选择
-		{ProfileID: profileID, Name: PGAuto, Type: "url-test", SortOrder: next(), Proxies: autoProxies, URL: urlTestURL, Interval: 60, Tolerance: 20},
+		{ProfileID: profileID, Name: PGAuto, Type: "url-test", SortOrder: next(), Proxies: autoProxies, URL: urlTestURL, Interval: 60, Tolerance: 20, Icon: GroupIcons[PGAuto]},
 		// 28. 故障转移
-		{ProfileID: profileID, Name: PGFallback, Type: "fallback", SortOrder: next(), Proxies: autoProxies, URL: urlTestURL, Interval: 60, Tolerance: 20},
+		{ProfileID: profileID, Name: PGFallback, Type: "fallback", SortOrder: next(), Proxies: autoProxies, URL: urlTestURL, Interval: 60, Tolerance: 20, Icon: GroupIcons[PGFallback]},
 		// 29. 广告拦截
-		{ProfileID: profileID, Name: PGAdBlock, Type: "select", SortOrder: next(), Proxies: adblockProxies},
+		{ProfileID: profileID, Name: PGAdBlock, Type: "select", SortOrder: next(), Proxies: adblockProxies, Icon: GroupIcons[PGAdBlock]},
 		// 30. 低倍率节点
-		{ProfileID: profileID, Name: PGLowCost, Type: "url-test", SortOrder: next(), Proxies: marshalProxies(), IncludeAll: true, Filter: LowCostNodePattern, URL: urlTestURL, Interval: 60, Tolerance: 20},
+		{ProfileID: profileID, Name: PGLowCost, Type: "url-test", SortOrder: next(), Proxies: marshalProxies(), IncludeAll: true, Filter: LowCostNodePattern, URL: urlTestURL, Interval: 60, Tolerance: 20, Icon: GroupIcons[PGLowCost]},
 	}
 
 	// 31-52. Country groups (appended last, matching TypeScript behavior).

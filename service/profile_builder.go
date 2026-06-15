@@ -32,7 +32,7 @@ func BuildConfig(profileID uint) (*ConfigTemplate, error) {
 
 	// Load and parse all nodes.
 	var nodes []model.Node
-	if err := db.DB.Where("subscription_id IN ?", subIDs).Find(&nodes).Error; err != nil {
+	if err := db.DB.Where("subscription_id IN ?", subIDs).Order("subscription_id ASC, name ASC").Find(&nodes).Error; err != nil {
 		return nil, fmt.Errorf("failed to load nodes: %w", err)
 	}
 
@@ -207,7 +207,7 @@ func getSortedFilteredCountries(countryNodes map[string][]string, threshold int)
 			continue
 		}
 		w, ok := weightMap[country]
-		if !ok {
+		if !ok || w == 0 {
 			w = 9999
 		}
 		entries = append(entries, countryWeight{name: country, weight: w})
@@ -255,16 +255,17 @@ func buildProxyGroups(
 	groups := make([]map[string]any, 0, 34+len(countryGroups))
 
 	// 1. 选择代理
-	groups = append(groups, pg(seed.PGSelect, "select", lists.defaultSelector))
+	groups = append(groups, pg(seed.PGSelect, "select", seed.GroupIcons[seed.PGSelect], lists.defaultSelector))
 
 	// 2. 手动选择
-	groups = append(groups, pgIncludeAll(seed.PGManual, "select"))
+	groups = append(groups, pgIncludeAll(seed.PGManual, "select", seed.GroupIcons[seed.PGManual]))
 
 	// 3. 前置代理 (conditional on landing)
 	if landing {
 		fps := map[string]any{
 			"name": seed.PGFrontProxy,
 			"type": "select",
+			"icon": seed.GroupIcons[seed.PGFrontProxy],
 		}
 		if regexMode {
 			fps["include-all"] = true
@@ -279,6 +280,7 @@ func buildProxyGroups(
 		ln := map[string]any{
 			"name": seed.PGLanding,
 			"type": "select",
+			"icon": seed.GroupIcons[seed.PGLanding],
 		}
 		if regexMode {
 			ln["include-all"] = true
@@ -290,77 +292,77 @@ func buildProxyGroups(
 	}
 
 	// 5. 静态资源
-	groups = append(groups, pg(seed.PGStaticResources, "select", lists.defaultProxies))
+	groups = append(groups, pg(seed.PGStaticResources, "select", seed.GroupIcons[seed.PGStaticResources], lists.defaultProxies))
 	// 6. AI服务
-	groups = append(groups, pg(seed.PGAIService, "select", lists.defaultProxies))
+	groups = append(groups, pg(seed.PGAIService, "select", seed.GroupIcons[seed.PGAIService], lists.defaultProxies))
 	// 7. 加密货币
-	groups = append(groups, pg(seed.PGCrypto, "select", lists.defaultProxies))
+	groups = append(groups, pg(seed.PGCrypto, "select", seed.GroupIcons[seed.PGCrypto], lists.defaultProxies))
 	// 8. 苹果服务
-	groups = append(groups, pg(seed.PGApple, "select", lists.defaultProxies))
+	groups = append(groups, pg(seed.PGApple, "select", seed.GroupIcons[seed.PGApple], lists.defaultProxies))
 	// 9. 谷歌服务
-	groups = append(groups, pg(seed.PGGoogle, "select", lists.defaultProxies))
+	groups = append(groups, pg(seed.PGGoogle, "select", seed.GroupIcons[seed.PGGoogle], lists.defaultProxies))
 	// 10. 微软服务
-	groups = append(groups, pg(seed.PGMicrosoft, "select", lists.defaultProxies))
+	groups = append(groups, pg(seed.PGMicrosoft, "select", seed.GroupIcons[seed.PGMicrosoft], lists.defaultProxies))
 	// 11. Xbox
-	groups = append(groups, pg(seed.PGXbox, "select", lists.defaultProxies))
+	groups = append(groups, pg(seed.PGXbox, "select", seed.GroupIcons[seed.PGXbox], lists.defaultProxies))
 	// 12. Github
-	groups = append(groups, pg(seed.PGGithub, "select", lists.defaultProxies))
+	groups = append(groups, pg(seed.PGGithub, "select", seed.GroupIcons[seed.PGGithub], lists.defaultProxies))
 
 	// 13. 哔哩哔哩 (conditional: TW+HK present → direct+local, else defaultProxiesDirect)
 	if hasTW && hasHK {
-		groups = append(groups, pg(seed.PGBilibili, "select", []string{"DIRECT", "台湾节点", "香港节点"}))
+		groups = append(groups, pg(seed.PGBilibili, "select", seed.GroupIcons[seed.PGBilibili], []string{"DIRECT", "台湾节点", "香港节点"}))
 	} else {
-		groups = append(groups, pg(seed.PGBilibili, "select", lists.defaultProxiesDirect))
+		groups = append(groups, pg(seed.PGBilibili, "select", seed.GroupIcons[seed.PGBilibili], lists.defaultProxiesDirect))
 	}
 
 	// 14. 巴哈姆特 (conditional: TW present → local first, else defaultProxies)
 	if hasTW {
-		groups = append(groups, pg(seed.PGBahamut, "select", []string{"台湾节点", seed.PGSelect, seed.PGManual, "DIRECT"}))
+		groups = append(groups, pg(seed.PGBahamut, "select", seed.GroupIcons[seed.PGBahamut], []string{"台湾节点", seed.PGSelect, seed.PGManual, "DIRECT"}))
 	} else {
-		groups = append(groups, pg(seed.PGBahamut, "select", lists.defaultProxies))
+		groups = append(groups, pg(seed.PGBahamut, "select", seed.GroupIcons[seed.PGBahamut], lists.defaultProxies))
 	}
 
 	// 15. Youtube
-	groups = append(groups, pg(seed.PGYoutube, "select", lists.defaultProxies))
+	groups = append(groups, pg(seed.PGYoutube, "select", seed.GroupIcons[seed.PGYoutube], lists.defaultProxies))
 	// 16. Twitch
-	groups = append(groups, pg(seed.PGTwitch, "select", lists.defaultProxies))
+	groups = append(groups, pg(seed.PGTwitch, "select", seed.GroupIcons[seed.PGTwitch], lists.defaultProxies))
 	// 17. Netflix
-	groups = append(groups, pg(seed.PGNetflix, "select", lists.defaultProxies))
+	groups = append(groups, pg(seed.PGNetflix, "select", seed.GroupIcons[seed.PGNetflix], lists.defaultProxies))
 	// 18. TikTok
-	groups = append(groups, pg(seed.PGTikTok, "select", lists.defaultProxies))
+	groups = append(groups, pg(seed.PGTikTok, "select", seed.GroupIcons[seed.PGTikTok], lists.defaultProxies))
 	// 19. Spotify
-	groups = append(groups, pg(seed.PGSpotify, "select", lists.defaultProxies))
+	groups = append(groups, pg(seed.PGSpotify, "select", seed.GroupIcons[seed.PGSpotify], lists.defaultProxies))
 	// 20. Telegram
-	groups = append(groups, pg(seed.PGTelegram, "select", lists.defaultProxies))
+	groups = append(groups, pg(seed.PGTelegram, "select", seed.GroupIcons[seed.PGTelegram], lists.defaultProxies))
 	// 21. Twitter
-	groups = append(groups, pg(seed.PGTwitter, "select", lists.defaultProxies))
+	groups = append(groups, pg(seed.PGTwitter, "select", seed.GroupIcons[seed.PGTwitter], lists.defaultProxies))
 
 	// 22. 新浪微博 (include-all + direct-first proxy list)
-	wb := pgIncludeAll(seed.PGWeibo, "select")
+	wb := pgIncludeAll(seed.PGWeibo, "select", seed.GroupIcons[seed.PGWeibo])
 	wb["proxies"] = lists.defaultProxiesDirect
 	groups = append(groups, wb)
 
 	// 23. Truth Social (conditional: US present → local first, else defaultProxies)
 	if hasUS {
-		groups = append(groups, pg(seed.PGTruthSocial, "select", []string{"美国节点", seed.PGSelect, seed.PGManual}))
+		groups = append(groups, pg(seed.PGTruthSocial, "select", seed.GroupIcons[seed.PGTruthSocial], []string{"美国节点", seed.PGSelect, seed.PGManual}))
 	} else {
-		groups = append(groups, pg(seed.PGTruthSocial, "select", lists.defaultProxies))
+		groups = append(groups, pg(seed.PGTruthSocial, "select", seed.GroupIcons[seed.PGTruthSocial], lists.defaultProxies))
 	}
 
 	// 24. E-Hentai
-	groups = append(groups, pg(seed.PGEHentai, "select", lists.defaultProxies))
+	groups = append(groups, pg(seed.PGEHentai, "select", seed.GroupIcons[seed.PGEHentai], lists.defaultProxies))
 	// 25. PikPak网盘
-	groups = append(groups, pg(seed.PGPikPak, "select", lists.defaultProxies))
+	groups = append(groups, pg(seed.PGPikPak, "select", seed.GroupIcons[seed.PGPikPak], lists.defaultProxies))
 	// 26. 搜狗输入法
-	groups = append(groups, pg(seed.PGSogouInput, "select", []string{"DIRECT", "REJECT"}))
+	groups = append(groups, pg(seed.PGSogouInput, "select", seed.GroupIcons[seed.PGSogouInput], []string{"DIRECT", "REJECT"}))
 	// 27. SSH
-	groups = append(groups, pg(seed.PGSSH, "select", lists.defaultProxies))
+	groups = append(groups, pg(seed.PGSSH, "select", seed.GroupIcons[seed.PGSSH], lists.defaultProxies))
 
 	// 28. Final
-	groups = append(groups, pg(seed.PGFinal, "select", []string{seed.PGSelect, "DIRECT"}))
+	groups = append(groups, pg(seed.PGFinal, "select", seed.GroupIcons[seed.PGFinal], []string{seed.PGSelect, "DIRECT"}))
 
 	// 29. 自动选择 (url-test with defaultFallback)
-	auto := pg(seed.PGAuto, "url-test", lists.defaultFallback)
+	auto := pg(seed.PGAuto, "url-test", seed.GroupIcons[seed.PGAuto], lists.defaultFallback)
 	groups = append(groups, auto)
 
 	// 30. 故障转移 (fallback with defaultFallback)
@@ -370,12 +372,13 @@ func buildProxyGroups(
 		"url":       "https://cp.cloudflare.com/generate_204",
 		"interval":  60,
 		"tolerance": 20,
+		"icon":      seed.GroupIcons[seed.PGFallback],
 		"proxies":   lists.defaultFallback,
 	}
 	groups = append(groups, fallback)
 
 	// 31. 广告拦截
-	groups = append(groups, pg(seed.PGAdBlock, "select", []string{"REJECT", "REJECT-DROP", "DIRECT"}))
+	groups = append(groups, pg(seed.PGAdBlock, "select", seed.GroupIcons[seed.PGAdBlock], []string{"REJECT", "REJECT-DROP", "DIRECT"}))
 
 	// 32. 低倍率节点 (conditional)
 	if hasLowCost {
@@ -383,6 +386,7 @@ func buildProxyGroups(
 		lc := map[string]any{
 			"name": seed.PGLowCost,
 			"type": typeStr,
+			"icon": seed.GroupIcons[seed.PGLowCost],
 		}
 		if regexMode {
 			lc["include-all"] = true
@@ -499,11 +503,10 @@ func buildCountryGroups(
 		}
 
 		if !regexMode {
-			// Enumerate actual node names.
-			proxies := nodesByCountry[country]
-			if proxies == nil {
-				proxies = []string{}
-			}
+			// Enumerate actual node names, sorted alphabetically.
+			proxies := make([]string, len(nodesByCountry[country]))
+			copy(proxies, nodesByCountry[country])
+			sort.Strings(proxies)
 			g["proxies"] = proxies
 		} else {
 			// Use include-all + filter pattern.
@@ -545,9 +548,12 @@ func getTypeString(gt int) string {
 	}
 }
 
-// pg creates a simple proxy group with a "proxies" list.
-func pg(name, typ string, proxies []string) map[string]any {
+// pg creates a simple proxy group with a "proxies" list and optional icon.
+func pg(name, typ, icon string, proxies []string) map[string]any {
 	m := map[string]any{"name": name, "type": typ, "proxies": proxies}
+	if icon != "" {
+		m["icon"] = icon
+	}
 	addHealthCheck(m, typ)
 	if typ == "load-balance" {
 		m["strategy"] = "sticky-sessions"
@@ -555,9 +561,13 @@ func pg(name, typ string, proxies []string) map[string]any {
 	return m
 }
 
-// pgIncludeAll creates a select group with include-all (for 手动选择 etc.).
-func pgIncludeAll(name, typ string) map[string]any {
-	return map[string]any{"name": name, "type": typ, "include-all": true}
+// pgIncludeAll creates a select group with include-all and optional icon.
+func pgIncludeAll(name, typ, icon string) map[string]any {
+	m := map[string]any{"name": name, "type": typ, "include-all": true}
+	if icon != "" {
+		m["icon"] = icon
+	}
+	return m
 }
 
 // buildList filters out nil/empty/false values and flattens slices, matching

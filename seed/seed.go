@@ -95,3 +95,21 @@ func Run() error {
 	)
 	return nil
 }
+
+// BackfillGroupIcons updates existing ProxyGroup records that have empty
+// icon fields, filling them from GroupIcons where a name match exists.
+// This is idempotent — safe to run on every startup.
+func BackfillGroupIcons() {
+	// Build a map of icon URL → list of group names that should have that icon.
+	iconGroups := make(map[string][]string)
+	for name, icon := range GroupIcons {
+		if icon != "" {
+			iconGroups[icon] = append(iconGroups[icon], name)
+		}
+	}
+
+	// For each unique icon URL, batch-update all groups with that name and empty icon.
+	for icon, names := range iconGroups {
+		db.DB.Where("icon = '' OR icon IS NULL").Where("name IN ?", names).Model(&model.ProxyGroup{}).Update("icon", icon)
+	}
+}

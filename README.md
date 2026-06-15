@@ -5,6 +5,8 @@
 
 > "Work in Progress" — 机场订阅聚合 + Mihomo 配置管理
 
+![目前的 Prototype](img/prototype.png)
+
 一个自托管的代理配置管理中心。拉取多个机场订阅源，统一管理节点，自动生成 Mihomo (Clash Meta) 兼容的 YAML 配置文件，并通过独立 Token 分发给各个客户端。
 
 ## 功能

@@ -174,6 +174,42 @@ const (
 	NodeSuffix = "节点"
 )
 
+// GroupIcons maps proxy group name constants to CDN icon URLs.
+var GroupIcons = map[string]string{
+	PGSelect:          "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Proxy.png",
+	PGManual:          "https://cdn.jsdelivr.net/gh/shindgewongxj/WHATSINStash@master/icon/select.png",
+	PGFrontProxy:      "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Area.png",
+	PGLanding:         "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Airport.png",
+	PGStaticResources: "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Cloudflare.png",
+	PGAIService:       "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/ChatGPT.png",
+	PGCrypto:          "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Cryptocurrency_1.png",
+	PGApple:           "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Apple_2.png",
+	PGGoogle:          "https://cdn.jsdelivr.net/gh/Orz-3/mini@master/Color/Google.png",
+	PGMicrosoft:       "https://cdn.jsdelivr.net/gh/powerfullz/override-rules@master/icons/Microsoft_Copilot.png",
+	PGXbox:            "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Xbox.png",
+	PGGithub:          "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/GitHub.png",
+	PGBilibili:        "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/bilibili.png",
+	PGBahamut:         "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Bahamut.png",
+	PGYoutube:         "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/YouTube.png",
+	PGTwitch:          "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Twitch.png",
+	PGNetflix:         "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Netflix.png",
+	PGTikTok:          "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/TikTok.png",
+	PGSpotify:         "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Spotify.png",
+	PGTelegram:        "https://cdn.jsdelivr.net/gh/powerfullz/override-rules@master/icons/Telegram.png",
+	PGTwitter:         "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Twitter.png",
+	PGWeibo:           "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Weibo.png",
+	PGTruthSocial:     "https://cdn.jsdelivr.net/gh/powerfullz/override-rules@master/icons/Truth_Social.png",
+	PGEHentai:         "https://cdn.jsdelivr.net/gh/powerfullz/override-rules@master/icons/Ehentai.png",
+	PGPikPak:          "https://cdn.jsdelivr.net/gh/powerfullz/override-rules@master/icons/PikPak.png",
+	PGSogouInput:      "https://cdn.jsdelivr.net/gh/powerfullz/override-rules@master/icons/Sougou.png",
+	PGSSH:             "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Server.png",
+	PGFinal:           "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Final.png",
+	PGAuto:            "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Auto.png",
+	PGFallback:        "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Available_1.png",
+	PGAdBlock:         "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/AdBlack.png",
+	PGLowCost:         "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Lab.png",
+}
+
 // Node matching patterns.
 const (
 	LowCostNodePattern = `(?i)0\.[0-5]|低倍率|省流|实验性`

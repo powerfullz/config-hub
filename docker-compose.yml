@@ -6,10 +6,8 @@ services:
       - "1323:1323"
     volumes:
       - ./data:/data
-    environment:
-      - DB_PATH=/data/config-hub.db
-      - PORT=1323
-      - ENABLE_REGISTRATION=false
+    env_file:
+      - .env
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:1323/health"]

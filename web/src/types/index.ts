@@ -12,6 +12,7 @@ export interface Profile {
   quic: boolean;
   regex: boolean;
   threshold: number;
+  file_name: string;
   proxy_groups?: ProxyGroup[];
   rules?: RuleEntry[];
   subscriptions?: Subscription[];

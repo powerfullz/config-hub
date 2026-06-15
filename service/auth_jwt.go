@@ -1,13 +1,32 @@
 package service
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
+	"log/slog"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtSecret = []byte("change-me-in-production") // TODO: env var
+var jwtSecret []byte
+
+// InitJWTSecret reads JWT_SECRET from the environment. If unset, it generates a
+// random 64‑hex‑character secret, logs it, and uses it for this process lifetime.
+func InitJWTSecret() {
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		raw := make([]byte, 32)
+		if _, err := rand.Read(raw); err != nil {
+			panic("failed to generate JWT secret: " + err.Error())
+		}
+		secret = hex.EncodeToString(raw)
+		slog.Info("JWT_SECRET not set, generated random 256-bit secret")
+	}
+	jwtSecret = []byte(secret)
+}
 
 // JWTClaims carries the authenticated user's identity inside the token.
 type JWTClaims struct {

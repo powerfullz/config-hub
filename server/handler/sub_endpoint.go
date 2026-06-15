@@ -61,6 +61,8 @@ func SubEndpoint(c echo.Context) error {
 	db.DB.Save(&token)
 
 	c.Response().Header().Set("Content-Type", "text/plain; charset=utf-8")
-	c.Response().Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"config-hub-%d.yaml\"", uint(profileID)))
+
+	filename := sanitizeFilename(resolveFilename(uint(profileID)))
+	c.Response().Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 	return c.Blob(http.StatusOK, "text/plain; charset=utf-8", yamlData)
 }

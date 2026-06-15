@@ -55,6 +55,7 @@ export default function ProfileEditor({ open, profile, onClose, onSaved }: Props
         quic: profile.quic,
         regex: profile.regex,
         threshold: profile.threshold,
+        file_name: profile.file_name || '',
       });
       // Load profile's current subscriptions and groups for checkbox pre-selection
       api.get<Profile>(`/api/profiles/${profile.id}`).then(p => {
@@ -68,6 +69,7 @@ export default function ProfileEditor({ open, profile, onClose, onSaved }: Props
       form.setFieldsValue({
         group_type: 0,
         threshold: 0,
+        file_name: '',
       });
     }
   }, [open, profile, form]);
@@ -171,6 +173,13 @@ export default function ProfileEditor({ open, profile, onClose, onSaved }: Props
             rules={[{ required: true, message: '请输入方案名称' }]}
           >
             <Input autoFocus />
+          </Form.Item>
+
+          <Form.Item
+            name="file_name"
+            label="导出文件名（可选，默认使用方案名称.yaml）"
+          >
+            <Input placeholder="例如: CNIX.yaml" />
           </Form.Item>
 
           <Form.Item name="group_type" label="国家/地区代理组类型">
