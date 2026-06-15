@@ -66,3 +66,74 @@ All regex patterns are compiled via `regexp.MustCompile` using Go's RE2 engine (
 ## Go Version
 
 `go.mod` declares `go 1.26.3`. If tooling rejects this version, try `go1.23.x` — the codebase uses no cutting-edge language features.
+
+## Web Frontend
+
+### Stack
+- React 19 + Ant Design 6 + Vite 8 + TypeScript 6
+- `react-router-dom` v7 for routing
+- `@dnd-kit/core` for drag-and-drop sorting
+- `@emotion/react` for global CSS
+
+### Directory (`web/src/`)
+| Directory     | Purpose                                              |
+| ------------- | ---------------------------------------------------- |
+| `api/`        | `ApiClient` class (fetch wrapper with JWT)           |
+| `components/` | `Layout.tsx`, `ProfileEditor.tsx`, `TokenManager.tsx` |
+| `pages/`      | `Dashboard.tsx`, `Login.tsx`, `Subscriptions.tsx`    |
+| `hooks/`      | `useAuth.ts` (login/logout/isLoggedIn state)         |
+| `i18n/`       | i18next config (`index.tsx`) + locale JSONs          |
+| `theme/`      | antd theme tokens + emotion global styles            |
+| `types/`      | TypeScript interfaces (Profile, Node, Token, etc.)   |
+
+### Dev vs Production
+- **Dev**: `pnpm dev` (Vite :5173, proxies `/api` and `/sub` to :1323). Go backend runs separately.
+- **Prod**: `pnpm build` → Go binary embeds `web/dist/` via `embed.go`. Served with `HTML5: true` (SPA fallback).
+
+## i18n (Internationalization)
+
+### Framework
+- **i18next** (`^26.3.1`) + **react-i18next** (`^17.0.8`)
+- Language detector: `i18next-browser-languagedetector`
+- Default: **zh-CN**, fallback: en
+
+### Namespaces (4 total)
+| Namespace       | Used by                                      | Purpose                     |
+| --------------- | -------------------------------------------- | --------------------------- |
+| `common`        | Layout, Login, shared buttons/groupType      | App shell, auth, shared UI  |
+| `dashboard`     | Dashboard.tsx                                | Profile listing, YAML panel |
+| `subscriptions` | Subscriptions.tsx                            | Sub table, modals, messages |
+| `profileEditor` | ProfileEditor.tsx, TokenManager.tsx          | Profile editing, token CRUD |
+
+### Key Naming Convention
+`{section}.{element}` — e.g., `menu.dashboard`, `form.nameRequired`, `message.refreshed`.
+
+### Translation Files
+- Located in `web/src/i18n/locales/{zh-CN,en}/` — 4 JSONs per language
+- Bundled at build time (static import), ~4KB total, zero runtime fetch
+
+### Usage in Components
+```tsx
+import { useTranslation } from '../i18n';  // re-exports from react-i18next
+
+const { t } = useTranslation('namespace');
+// or for a secondary namespace:
+const { t: tc } = useTranslation('common');
+```
+
+- **`t('key')`** returns the translated string
+- **`t('key', { count: 5 })`** for interpolation
+- **`i18n.language`** for locale-aware formatting (e.g., `toLocaleString(i18n.language)`)
+
+### I18nProvider
+`web/src/i18n/index.tsx` exports `I18nProvider` which wraps:
+1. `I18nextProvider` (i18next instance)
+2. `ConfigProvider` (antd — auto-syncs locale via `import('antd/locale/zh_CN')`)
+3. `html[lang]` sync on language change
+4. `themeConfig` from `../theme`
+
+`main.tsx` uses `<I18nProvider>` as the root wrapper — does NOT import antd or theme directly.
+
+### Missing Keys
+- **Dev**: `saveMissing: true` + `missingKeyHandler` logs `console.warn`
+- **Prod** (`NODE_ENV=production`): `saveMissing: false`, falls back to zh-CN translation

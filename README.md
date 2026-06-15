@@ -111,91 +111,13 @@ docker logs config-hub 2>&1 | grep password
 | GET    | `/api/profiles/:id/export`               | JWT   | 下载 YAML 配置文件                                    |
 | GET    | `/sub/:profileId?token=xxx`              | Token | 客户端订阅端点，返回 YAML 配置                        |
 
-## 项目结构
+## 文档
 
-```
-config-hub/
-├── main.go                # 入口：初始化 DB/种子/Cron/路由/前端 SPA
-├── embed.go               # go:embed 前端 dist 产物
-├── Dockerfile             # 多阶段构建
-├── go.mod / go.sum
-├── db/
-│   └── db.go              # SQLite 初始化（GORM + WAL + 外键约束）
-├── model/                 # 数据模型定义（GORM）
-│   ├── model.go           #   注册所有模型
-│   ├── user.go            #   用户
-│   ├── subscription.go    #   订阅源
-│   ├── node.go            #   代理节点
-│   ├── profile.go         #   配置档案
-│   ├── proxy_group.go     #   代理组
-│   ├── rule_entry.go      #   规则条目
-│   ├── subscription_group.go #   组合订阅
-│   └── token.go           #   分发 Token
-├── seed/                  # 种子数据（idempotent）
-│   ├── seed.go            #   种子执行入口
-│   ├── countries.go       #   22 个国家/地区正则 + 常量定义
-│   ├── proxy_groups.go    #   52 个代理组定义
-│   ├── rules.go           #   37 条基础规则
-│   ├── rule_providers.go  #   13 个规则提供者
-│   ├── defaults.go        #   DNS / Sniffer / TUN / Geodata 默认配置
-│   └── testdata.go        #   示例测试数据
-├── server/                # HTTP 层（Echo 框架）
-│   ├── server.go          #   路由注册
-│   ├── handler/           #   请求处理
-│   │   ├── auth.go        #     登录/注册/当前用户
-│   │   ├── subscription.go #    订阅源 CRUD + 刷新
-│   │   ├── node.go        #     节点查询 + 统计
-│   │   ├── profile.go     #     档案 CRUD + 订阅关联
-│   │   ├── token.go       #     Token 生成/列出/吊销
-│   │   ├── export.go      #     YAML 预览 + 导出
-│   │   ├── subscription_group.go # 组合订阅 CRUD
-│   │   └── sub_endpoint.go #   公共 /sub 端点
-│   └── middleware/
-│       └── jwt.go         #   JWT 认证 + SubToken 认证中间件
-├── service/               # 业务逻辑层
-│   ├── auth_jwt.go        #   JWT 生成/验证
-│   ├── sub_fetcher.go     #   订阅源 HTTP 拉取（mihomo convert.ConvertsV2Ray）
-│   ├── node_matcher.go    #   节点国家/落地/低倍率分类
-│   ├── profile_builder.go #   配置组装（节点 + 代理组 + 规则 → YAML）
-│   ├── config_template.go #   Mihomo YAML 模板结构体
-│   ├── token.go           #   Token SHA-256 哈希
-│   ├── cron.go            #   定时刷新调度（robfig/cron）
-│   └── ssrf_guard.go      #   SSRF 防护（阻止内网 IP 访问）
-└── web/                   # React 前端（Vite + TypeScript）
-    ├── src/
-    │   ├── pages/         #   页面组件
-    │   │   ├── Login.tsx
-    │   │   ├── Dashboard.tsx
-    │   │   └── Subscriptions.tsx
-    │   ├── api/           #   API 调用封装
-    │   ├── components/    #   共用组件
-    │   ├── hooks/         #   自定义 Hooks
-    │   └── types/         #   TypeScript 类型定义
-    ├── package.json
-    └── vite.config.ts
-```
+更多细节请参考 `docs/` 目录：
 
-## 技术栈
-
-| 层级      | 技术                                  |
-| --------- | ------------------------------------- |
-| 后端语言  | Go 1.26                               |
-| HTTP 框架 | [Echo v4](https://echo.labstack.com/) |
-| ORM       | [GORM](https://gorm.io/)              |
-| 数据库    | SQLite（glebarez/sqlite 纯 Go 驱动）  |
-| 认证      | bcrypt + JWT (golang-jwt)             |
-| 定时任务  | robfig/cron v3                        |
-| 订阅解析  | Mihomo `convert.ConvertsV2Ray`（远程依赖，go build 时自动拉取） |
-| 前端框架  | React 19                              |
-| 构建工具  | Vite 8                                |
-| 类型系统  | TypeScript 6                          |
-| 拖拽交互  | dnd-kit (@dnd-kit/core)               |
-| 路由      | react-router-dom v7                   |
-| 配置格式  | Mihomo (Clash Meta) YAML              |
-
-## 安全特性
-
-- **SSRF 防护**: 自定义 Dialer 阻止对内网/私有 IP 段的 HTTP 请求，防止订阅源 URL 被恶意利用
-- **密码哈希**: bcrypt (cost=12) 存储用户密码
-- **Token 安全**: 分发 Token 仅返回一次，数据库中仅存储 SHA-256 哈希
-- **Token 吊销**: 支持软删除（revoked=true），吊销后立即失效
+| 文档 | 说明 |
+| ---- | ---- |
+| [项目结构](docs/project-structure.md) | 完整目录结构、技术栈、安全特性 |
+| [API 参考](docs/API.md) | 全部 API 端点详细说明 |
+| [架构设计](docs/ARCHITECTURE.md) | 系统架构与数据流 |
+| [种子数据](docs/SEED_DATA.md) | 预置数据说明 |
