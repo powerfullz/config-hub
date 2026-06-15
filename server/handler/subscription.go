@@ -55,6 +55,7 @@ type updatePayload struct {
 	Name         *string `json:"name"`
 	URL          *string `json:"url"`
 	UserAgent    *string `json:"user_agent"`
+	FetchProxy   *string `json:"fetch_proxy"`
 	CronExpr     *string `json:"cron_expr"`
 	IntervalSecs *int    `json:"interval_secs"`
 	Enabled      *bool   `json:"enabled"`
@@ -85,6 +86,9 @@ func UpdateSubscription(c echo.Context) error {
 	}
 	if input.UserAgent != nil {
 		sub.UserAgent = *input.UserAgent
+	}
+	if input.FetchProxy != nil {
+		sub.FetchProxy = *input.FetchProxy
 	}
 	if input.CronExpr != nil {
 		sub.CronExpr = *input.CronExpr
@@ -136,7 +140,7 @@ func RefreshSubscription(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, echo.Map{"error": "Subscription not found", "code": 404})
 	}
 
-	result, err := service.FetchSubscription(sub.URL, sub.UserAgent)
+	result, err := service.FetchSubscription(sub.URL, sub.UserAgent, sub.FetchProxy)
 	if err != nil {
 		slog.Error("Subscription refresh failed", "id", id, "url", sub.URL, "error", err)
 		code := http.StatusBadGateway

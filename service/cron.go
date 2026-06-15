@@ -116,7 +116,7 @@ func refreshSubByID(subID uint) {
 
 	slog.Info("Cron: refreshing subscription", "id", sub.ID, "name", sub.Name, "url", sub.URL)
 
-	result, err := FetchSubscription(sub.URL, sub.UserAgent)
+	result, err := FetchSubscription(sub.URL, sub.UserAgent, sub.FetchProxy)
 	if err != nil {
 		slog.Error("Cron: fetch failed", "id", sub.ID, "name", sub.Name, "error", err)
 		return

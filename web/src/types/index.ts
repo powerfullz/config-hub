@@ -43,6 +43,7 @@ export interface Subscription {
   name: string;
   url: string;
   user_agent: string;
+  fetch_proxy: string;
   cron_expr: string;
   interval_secs: number;
   node_count: number;

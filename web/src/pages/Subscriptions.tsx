@@ -71,7 +71,12 @@ export default function Subscriptions() {
 
   const handleEdit = (sub: Subscription) => {
     setEditingSub(sub);
-    form.setFieldsValue({ name: sub.name, url: sub.url });
+    form.setFieldsValue({
+      name: sub.name,
+      url: sub.url,
+      user_agent: sub.user_agent || '',
+      fetch_proxy: sub.fetch_proxy || '',
+    });
     setModalOpen(true);
   };
 
@@ -374,6 +379,18 @@ export default function Subscriptions() {
             ]}
           >
             <Input placeholder="https://example.com/subscription" />
+          </Form.Item>
+          <Form.Item
+            name="user_agent"
+            label="User-Agent (optional)"
+          >
+            <Input placeholder="Default: random Chrome UA" />
+          </Form.Item>
+          <Form.Item
+            name="fetch_proxy"
+            label="Fetch Proxy (optional)"
+          >
+            <Input placeholder="e.g. http://127.0.0.1:7890 or socks5://127.0.0.1:7891" />
           </Form.Item>
         </Form>
       </Modal>

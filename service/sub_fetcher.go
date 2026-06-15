@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -23,14 +24,18 @@ type FetchResult struct {
 
 // FetchSubscription fetches and parses a subscription URL.
 // It retries up to 3 times with exponential backoff.
-func FetchSubscription(url, ua string) (*FetchResult, error) {
+func FetchSubscription(rawURL, ua, proxy string) (*FetchResult, error) {
+	if ua == "" {
+		ua = "clash.meta/v1.19.24"
+	}
+
 	var lastErr error
 	for attempt := 0; attempt < 3; attempt++ {
 		if attempt > 0 {
 			time.Sleep(time.Duration(1<<uint(attempt-1)) * time.Second)
 		}
 
-		result, err := fetchOnce(url, ua)
+		result, err := fetchOnce(rawURL, ua, proxy)
 		if err == nil {
 			return result, nil
 		}
@@ -57,8 +62,8 @@ func isNonRetryable(err error) bool {
 	return false
 }
 
-func fetchOnce(url, ua string) (*FetchResult, error) {
-	req, err := http.NewRequest("GET", url, nil)
+func fetchOnce(rawURL, ua, proxyURL string) (*FetchResult, error) {
+	req, err := http.NewRequest("GET", rawURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
 	}
@@ -66,7 +71,19 @@ func fetchOnce(url, ua string) (*FetchResult, error) {
 		req.Header.Set("User-Agent", ua)
 	}
 
-	client := SafeHTTPClient()
+	var client *http.Client
+	if proxyURL != "" {
+		proxyURLParsed, err := url.Parse(proxyURL)
+		if err != nil {
+			return nil, fmt.Errorf("invalid proxy URL: %w", err)
+		}
+		transport := &http.Transport{
+			Proxy: http.ProxyURL(proxyURLParsed),
+		}
+		client = &http.Client{Transport: transport, Timeout: 30 * time.Second}
+	} else {
+		client = SafeHTTPClient()
+	}
 
 	resp, err := client.Do(req)
 	if err != nil {

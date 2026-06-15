@@ -8,6 +8,7 @@ type Subscription struct {
 	Name          string     `gorm:"not null" json:"name"`
 	URL           string     `gorm:"not null" json:"url"`
 	UserAgent     string     `json:"user_agent"`
+	FetchProxy    string     `json:"fetch_proxy"`     // optional http/socks5 proxy for fetching
 	CronExpr      string     `json:"cron_expr"`       // e.g. "@every 3600s" for robfig/cron
 	IntervalSecs  int        `gorm:"default:3600" json:"interval_secs"`
 	LastFetchedAt *time.Time `json:"last_fetched_at"`

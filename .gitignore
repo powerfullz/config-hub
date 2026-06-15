@@ -2,3 +2,4 @@ config-hub.db*
 config-hub
 web/dist/
 *.exe
+.playwright-mcp/
