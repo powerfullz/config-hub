@@ -2,6 +2,7 @@
 
 ## 目录结构
 
+```text
 config-hub/
 ├── main.go                # 入口：初始化 DB/种子/Cron/路由/前端 SPA
 ├── embed.go               # go:embed 前端 dist 产物

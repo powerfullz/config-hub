@@ -80,6 +80,19 @@ class ApiClient {
     return res.text();
   }
 
+  // ── Account Management ──────────────────────────────────────────
+
+  changePassword(currentPassword: string, newPassword: string) {
+    return this.put<{ message: string }>('/api/auth/password', {
+      current_password: currentPassword,
+      new_password: newPassword,
+    });
+  }
+
+  async updateAccount(username: string): Promise<import('../types').User> {
+    return this.put<import('../types').User>('/api/auth/account', { username });
+  }
+
   // ── Token (Share Link) Management ──────────────────────────────────
 
   listTokens(profileId: number) {

@@ -101,3 +101,90 @@ func Me(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, user)
 }
+
+// changePasswordPayload parses the JSON body for password change requests.
+type changePasswordPayload struct {
+	CurrentPassword string `json:"current_password"`
+	NewPassword     string `json:"new_password"`
+}
+
+// ChangePassword PUT /api/auth/password
+// Changes the authenticated user's password. Requires current password verification.
+func ChangePassword(c echo.Context) error {
+	rawID, ok := c.Get("user_id").(uint)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, echo.Map{"error": "Not authenticated", "code": 401})
+	}
+
+	var input changePasswordPayload
+	if err := c.Bind(&input); err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid request body", "code": 400})
+	}
+	if input.CurrentPassword == "" || input.NewPassword == "" {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Current password and new password are required", "code": 400})
+	}
+	if len(input.NewPassword) < 6 {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "New password must be at least 6 characters", "code": 400})
+	}
+
+	var user model.User
+	if err := db.DB.First(&user, rawID).Error; err != nil {
+		return c.JSON(http.StatusNotFound, echo.Map{"error": "User not found", "code": 404})
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.CurrentPassword)); err != nil {
+		return c.JSON(http.StatusUnauthorized, echo.Map{"error": "Current password is incorrect", "code": 401})
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(input.NewPassword), 12)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to hash password", "code": 500})
+	}
+
+	user.PasswordHash = string(hash)
+	if err := db.DB.Save(&user).Error; err != nil {
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to update password", "code": 500})
+	}
+
+	return c.JSON(http.StatusOK, echo.Map{"message": "Password changed successfully"})
+}
+
+// updateAccountPayload parses the JSON body for account update requests.
+type updateAccountPayload struct {
+	Username string `json:"username"`
+}
+
+// UpdateAccount PUT /api/auth/account
+// Updates the authenticated user's account information (e.g., username).
+func UpdateAccount(c echo.Context) error {
+	rawID, ok := c.Get("user_id").(uint)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, echo.Map{"error": "Not authenticated", "code": 401})
+	}
+
+	var input updateAccountPayload
+	if err := c.Bind(&input); err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid request body", "code": 400})
+	}
+	if input.Username == "" {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Username is required", "code": 400})
+	}
+
+	var user model.User
+	if err := db.DB.First(&user, rawID).Error; err != nil {
+		return c.JSON(http.StatusNotFound, echo.Map{"error": "User not found", "code": 404})
+	}
+
+	// Check if username is already taken by another user
+	var existing model.User
+	if err := db.DB.Where("username = ? AND id != ?", input.Username, rawID).First(&existing).Error; err == nil {
+		return c.JSON(http.StatusConflict, echo.Map{"error": "Username already exists", "code": 409})
+	}
+
+	user.Username = input.Username
+	if err := db.DB.Save(&user).Error; err != nil {
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to update account", "code": 500})
+	}
+
+	return c.JSON(http.StatusOK, user)
+}

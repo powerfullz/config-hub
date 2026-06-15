@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Layout as AntLayout, Menu, Typography, Button, theme } from 'antd';
+import { Layout as AntLayout, Menu, Typography, Button, Dropdown, theme } from 'antd';
 import {
   DashboardOutlined,
   AppstoreOutlined,
@@ -8,6 +8,8 @@ import {
   TranslationOutlined,
   SunOutlined,
   MoonOutlined,
+  UserOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../hooks/useAuth';
 import i18n, { useTranslation } from '../i18n';
@@ -125,16 +127,30 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             title={isDark ? t('theme.switchLight') : t('theme.switchDark')}
             style={{ color: themeToken.colorTextSecondary }}
           />
-          <Text style={{ fontSize: 14, color: themeToken.colorTextTertiary }}>
-            {user?.username}
-          </Text>
-          <Button
-            type="text"
-            icon={<LogoutOutlined />}
-            onClick={handleLogout}
+          <Dropdown
+            menu={{
+              items: [
+                {
+                  key: 'account',
+                  icon: <SettingOutlined />,
+                  label: t('menu.account'),
+                  onClick: () => navigate('/account'),
+                },
+                { type: 'divider' },
+                {
+                  key: 'logout',
+                  icon: <LogoutOutlined />,
+                  label: t('header.logout'),
+                  onClick: handleLogout,
+                },
+              ],
+            }}
+            trigger={['click']}
           >
-            {t('header.logout')}
-          </Button>
+            <Button type="text" icon={<UserOutlined />}>
+              {user?.username}
+            </Button>
+          </Dropdown>
         </div>
       </Header>
 

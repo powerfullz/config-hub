@@ -4,7 +4,8 @@
   },
   "menu": {
     "dashboard": "Dashboard",
-    "subscriptions": "Subscriptions"
+    "subscriptions": "Subscriptions",
+    "account": "Account"
   },
   "header": {
     "logout": "Logout"
@@ -39,5 +40,35 @@
   "theme": {
     "switchLight": "Switch to light mode",
     "switchDark": "Switch to dark mode"
+  },
+  "account": {
+    "title": "Account Settings",
+    "userInfo": "User Information",
+    "changePassword": "Change Password",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm Password",
+    "currentPasswordPlaceholder": "Enter current password",
+    "newPasswordPlaceholder": "Enter new password (min 6 chars)",
+    "confirmPasswordPlaceholder": "Re-enter new password",
+    "currentPasswordRequired": "Please enter current password",
+    "newPasswordRequired": "Please enter new password",
+    "confirmPasswordRequired": "Please confirm new password",
+    "newPasswordMinLength": "New password must be at least 6 characters",
+    "passwordMismatch": "Passwords do not match",
+    "passwordChanged": "Password changed successfully",
+    "usernameChanged": "Username changed successfully",
+    "wrongPassword": "Current password is incorrect",
+    "usernameExists": "Username already exists",
+    "editUsername": "Edit Username",
+    "saveUsername": "Save",
+    "username": "Username",
+    "createdAt": "Registered",
+    "userId": "User ID",
+    "changePasswordTitle": "Change Password",
+    "oldPassword": "Current Password",
+    "yourOldPassword": "Please enter current password",
+    "yourNewPassword": "Please enter new password",
+    "confirmNewPassword": "Please confirm new password"
   }
 }

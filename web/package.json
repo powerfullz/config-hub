@@ -16,6 +16,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@emotion/react": "^11.14.0",
     "antd": "^6.4.4",
+    "dayjs": "^1.11.21",
     "i18next": "^26.3.1",
     "i18next-browser-languagedetector": "^8.2.1",
     "react": "^19.2.7",

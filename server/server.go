@@ -20,6 +20,8 @@ func RegisterRoutes(e *echo.Echo) {
 	authMe := auth.Group("")
 	authMe.Use(middleware.JWTAuth())
 	authMe.GET("/me", handler.Me)
+	authMe.PUT("/password", handler.ChangePassword)
+	authMe.PUT("/account", handler.UpdateAccount)
 
 	// Protected routes (all /api/* except /api/auth/*)
 	protected := api.Group("")

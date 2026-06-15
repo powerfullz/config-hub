@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Subscriptions from './pages/Subscriptions';
+import Account from './pages/Account';
 import Layout from './components/Layout';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -25,6 +26,13 @@ function App() {
         <ProtectedRoute>
           <Layout>
             <Subscriptions />
+          </Layout>
+        </ProtectedRoute>
+      } />
+      <Route path="/account" element={
+        <ProtectedRoute>
+          <Layout>
+            <Account />
           </Layout>
         </ProtectedRoute>
       } />
