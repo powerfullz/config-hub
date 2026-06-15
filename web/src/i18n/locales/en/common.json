@@ -35,5 +35,9 @@
     "select": "手动选择 (select)",
     "urlTest": "自动选择 (url-test)",
     "loadBalance": "负载均衡 (load-balance)"
+  },
+  "theme": {
+    "switchLight": "Switch to light mode",
+    "switchDark": "Switch to dark mode"
   }
 }

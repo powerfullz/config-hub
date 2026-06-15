@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { Form, Input, Button, Card, Typography, Alert, Space } from 'antd';
+import { Form, Input, Button, Card, Typography, Alert, Space, theme } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from '../i18n';
@@ -15,6 +15,7 @@ interface LoginFormValues {
 export default function Login() {
   const { login, isLoggedIn } = useAuth();
   const { t } = useTranslation('common');
+  const { token: themeToken } = theme.useToken();
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -40,7 +41,7 @@ export default function Login() {
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
-      background: '#f0f2f5',
+      background: themeToken.colorBgLayout,
     }}>
       <Card style={{ width: 400 }}>
         <Space orientation="vertical" size="large" style={{ width: '100%' }}>

@@ -1,10 +1,12 @@
 import i18n from 'i18next';
 import { initReactI18next, I18nextProvider } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, theme as antTheme } from 'antd';
 import type { Locale } from 'antd/es/locale';
-import { useState, useEffect } from 'react';
-import { themeConfig } from '../theme';
+import type { ThemeConfig } from 'antd';
+import { useState, useEffect, useMemo } from 'react';
+import { ThemeProvider, getThemeConfig, getGlobalStyles } from '../theme';
+import { useTheme } from '../theme';
 
 // Import all locale JSON files
 import commonZh from './locales/zh-CN/common.json';
@@ -82,10 +84,19 @@ if (!supportedLngs.includes(i18n.language)) {
 }
 
 /**
- * I18nProvider — wraps the app with I18nextProvider and antd ConfigProvider.
- * Syncs antd locale with i18n language changes, and updates <html lang>.
+ * Global emotion styles that adapt to dark/light mode.
+ * Extracted as a component so React can track identity across renders.
  */
-export function I18nProvider({ children }: { children: React.ReactNode }) {
+function GlobalStyles({ isDark }: { isDark: boolean }) {
+  return getGlobalStyles(isDark);
+}
+
+/**
+ * Inner provider that reads theme state and applies it to ConfigProvider.
+ * Must be a child of ThemeProvider to access useTheme().
+ */
+function ThemeAwareConfigProvider({ children }: { children: React.ReactNode }) {
+  const { isDark } = useTheme();
   const [antdLocale, setAntdLocale] = useState<Locale | undefined>(undefined);
 
   useEffect(() => {
@@ -113,14 +124,35 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  const currentTheme: ThemeConfig = useMemo(
+    () => ({
+      ...getThemeConfig(isDark),
+      algorithm: isDark ? antTheme.darkAlgorithm : antTheme.defaultAlgorithm,
+    }),
+    [isDark],
+  );
+
+  return (
+    <ConfigProvider theme={currentTheme} locale={antdLocale}>
+      <GlobalStyles isDark={isDark} />
+      {children}
+    </ConfigProvider>
+  );
+}
+
+/**
+ * I18nProvider — wraps the app with I18nextProvider and antd ConfigProvider.
+ * Syncs antd locale with i18n language changes, supports dark/light theme.
+ * Also provides ThemeContext for child components (e.g., Layout) to access theme state.
+ */
+export function I18nProvider({ children }: { children: React.ReactNode }) {
   return (
     <I18nextProvider i18n={i18n}>
-      <ConfigProvider
-        theme={themeConfig}
-        locale={antdLocale}
-      >
-        {children}
-      </ConfigProvider>
+      <ThemeProvider>
+        <ThemeAwareConfigProvider>
+          {children}
+        </ThemeAwareConfigProvider>
+      </ThemeProvider>
     </I18nextProvider>
   );
 }

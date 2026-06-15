@@ -5,9 +5,13 @@ import {
   DashboardOutlined,
   AppstoreOutlined,
   LogoutOutlined,
+  TranslationOutlined,
+  SunOutlined,
+  MoonOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../hooks/useAuth';
 import i18n, { useTranslation } from '../i18n';
+import { useTheme } from '../theme';
 
 const { Header, Content } = AntLayout;
 const { Text } = Typography;
@@ -15,13 +19,17 @@ const { Text } = Typography;
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation('common');
   const { user, logout, isLoggedIn } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const [lang, setLang] = useState(i18n.language);
 
   useEffect(() => {
     const handler = (lng: string) => setLang(lng);
     i18n.on('languageChanged', handler);
-    return () => { i18n.off('languageChanged', handler); };
+    return () => {
+      i18n.off('languageChanged', handler);
+    };
   }, []);
+
   const navigate = useNavigate();
   const location = useLocation();
   const { token: themeToken } = theme.useToken();
@@ -48,6 +56,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     navigate(key);
   };
 
+  const toggleLanguage = () => {
+    const nextLang = lang === 'zh-CN' ? 'en' : 'zh-CN';
+    i18n.changeLanguage(nextLang);
+  };
+
   if (!isLoggedIn) return <>{children}</>;
 
   return (
@@ -59,7 +72,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           padding: '0 24px',
           background: themeToken.colorBgContainer,
           borderBottom: `1px solid ${themeToken.colorBorderSecondary}`,
-          boxShadow: '0 1px 4px rgba(0, 0, 0, 0.08)',
+          boxShadow: isDark
+            ? '0 1px 4px rgba(0, 0, 0, 0.3)'
+            : '0 1px 4px rgba(0, 0, 0, 0.08)',
         }}
       >
         <div
@@ -95,24 +110,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           }}
         />
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Button
             type="text"
-            size="small"
-            style={{ fontWeight: lang === 'zh-CN' ? 600 : 400, color: lang === 'zh-CN' ? '#1677ff' : undefined }}
-            onClick={() => i18n.changeLanguage('zh-CN')}
-          >
-            中
-          </Button>
+            icon={<TranslationOutlined />}
+            onClick={toggleLanguage}
+            title={lang === 'zh-CN' ? 'Switch to English' : '切换到中文'}
+            style={{ color: themeToken.colorTextSecondary }}
+          />
           <Button
             type="text"
-            size="small"
-            style={{ fontWeight: lang === 'en' ? 600 : 400, color: lang === 'en' ? '#1677ff' : undefined }}
-            onClick={() => i18n.changeLanguage('en')}
-          >
-            EN
-          </Button>
-          <Text type="secondary" style={{ fontSize: 14 }}>
+            icon={isDark ? <SunOutlined /> : <MoonOutlined />}
+            onClick={toggleTheme}
+            title={isDark ? t('theme.switchLight') : t('theme.switchDark')}
+            style={{ color: themeToken.colorTextSecondary }}
+          />
+          <Text style={{ fontSize: 14, color: themeToken.colorTextTertiary }}>
             {user?.username}
           </Text>
           <Button
