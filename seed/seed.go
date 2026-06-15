@@ -1,6 +1,8 @@
 package seed
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"log/slog"
 
 	"config-hub/db"
@@ -32,7 +34,14 @@ func Run() error {
 	}
 
 	// Create admin user.
-	hash, err := bcrypt.GenerateFromPassword([]byte("admin123"), 12)
+	// Generate random admin password on first initialization
+	rawPwd := make([]byte, 12)
+	if _, err := rand.Read(rawPwd); err != nil {
+		tx.Rollback()
+		return err
+	}
+	password := hex.EncodeToString(rawPwd)
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), 12)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -77,6 +86,7 @@ func Run() error {
 
 	slog.Info("Seed data created",
 		"user", adminUser.Username,
+		"password", password,
 		"profile", profile.Name,
 		"groups", len(groups),
 		"rules", len(rules),

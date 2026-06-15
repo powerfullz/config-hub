@@ -27,10 +27,10 @@ importers:
         specifier: ^6.4.4
         version: 6.4.4(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       react:
-        specifier: ^19.2.6
+        specifier: ^19.2.7
         version: 19.2.7
       react-dom:
-        specifier: ^19.2.6
+        specifier: ^19.2.7
         version: 19.2.7(react@19.2.7)
       react-router-dom:
         specifier: ^7.17.0
@@ -43,7 +43,7 @@ importers:
         specifier: ^24.12.3
         version: 24.13.2
       '@types/react':
-        specifier: ^19.2.14
+        specifier: ^19.2.17
         version: 19.2.17
       '@types/react-dom':
         specifier: ^19.2.3
@@ -64,13 +64,13 @@ importers:
         specifier: ^17.6.0
         version: 17.6.0
       typescript:
-        specifier: ~6.0.2
+        specifier: ~6.0.3
         version: 6.0.3
       typescript-eslint:
         specifier: ^8.59.2
         version: 8.61.0(eslint@10.5.0)(typescript@6.0.3)
       vite:
-        specifier: ^8.0.12
+        specifier: ^8.0.16
         version: 8.0.16(@types/node@24.13.2)
 
 packages:

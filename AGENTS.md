@@ -9,15 +9,11 @@ cd web && pnpm run build    # outputs web/dist/
 cd .. && CGO_ENABLED=0 go build -o config-hub .
 ```
 
-## Subscription Converter (Vendored)
+## Subscription Converter (Remote Dependency)
 
-The subscription parsing code (mihomo's `common/convert` package) is vendored into `internal/convert/`. It handles 11 protocols: ss, ssr, vmess, vless, trojan, hysteria, hysteria2, tuic, socks, http, anytls, mierus. The original mihomo dependency has been removed from `go.mod` — no local `replace` directive needed, and the project builds anywhere without an external mihomo checkout.
+The subscription parsing code uses mihomo's `common/convert` package as a direct `go.mod` dependency (`github.com/metacubex/mihomo v1.19.27`). No local `replace` directive needed — `go build` automatically fetches the remote module. It handles 11 protocols: ss, ssr, vmess, vless, trojan, hysteria, hysteria2, tuic, socks, http, anytls, mierus.
 
-Files:
-- `internal/convert/converter.go` — entry point `ConvertsV2Ray(buf []byte) ([]map[string]any, error)`
-- `internal/convert/v.go` — VLESS/VMessAEAD share link handler
-- `internal/convert/base64.go` — base64 decode utilities
-- `internal/convert/util.go` — random User-Agent list, SS cipher verification
+Entry point: `convert.ConvertsV2Ray(buf []byte) ([]map[string]any, error)` imported from `"github.com/metacubex/mihomo/common/convert"`.
 
 ## SQLite Driver
 
@@ -54,7 +50,7 @@ Do NOT run `pnpm dev` and expect the Go binary to serve the frontend — it serv
 
 ## Seed Data Idempotency
 
-- `seed.Run()`: skips if `User` table count > 0. Creates admin user (`admin` / `admin123`, bcrypt), default profile, 52 proxy groups, 37 rules, DNS/sniffer/TUN defaults.
+- `seed.Run()`: skips if `User` table count > 0. Creates admin user (admin with randomly generated password (24 hex chars) logged via slog.Info on first startup, bcrypt), default profile, 52 proxy groups, 37 rules, DNS/sniffer/TUN defaults.
 - `seed.InsertSampleData()`: skips if a subscription named "测试订阅" exists. Creates one test subscription + 17 nodes across 8 countries.
 
 Fresh clones get a blank DB (`.gitignore` includes `config-hub.db`), so seed always runs on first launch.

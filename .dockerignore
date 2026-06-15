@@ -1,0 +1,13 @@
+node_modules/
+web/node_modules/
+web/dist/
+config-hub.db
+*.db
+*.db-journal
+*.db-wal
+.git/
+.gitignore
+.DS_Store
+data/
+.nyc_output/
+*.log

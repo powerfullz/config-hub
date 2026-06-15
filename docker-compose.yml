@@ -1,0 +1,20 @@
+version: "3.8"
+services:
+  config-hub:
+    build: .
+    container_name: config-hub
+    ports:
+      - "1323:1323"
+    volumes:
+      - ./data:/data
+    environment:
+      - DB_PATH=/data/config-hub.db
+      - PORT=1323
+      - ENABLE_REGISTRATION=false
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:1323/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

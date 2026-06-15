@@ -21,8 +21,7 @@
 ### 前置依赖
 
 - Go 1.26+
-- Node.js 20+ / pnpm
-- Mihomo 源码（本地 replace，编译时依赖）
+- Node.js 24+ / pnpm
 
 ### 构建前端
 
@@ -49,20 +48,38 @@ go build -ldflags="-s -w" -o config-hub .
 
 ### 登录
 
-打开浏览器访问 `http://localhost:1323`，使用默认凭证登录：
+打开浏览器访问 `http://localhost:1323`，使用默认用户 `admin` 登录。
 
-| 用户名  | 密码       |
-| ------- | ---------- |
-| `admin` | `admin123` |
+首次启动时系统会随机生成 admin 密码并打印在日志中：
+```
+time=... level=INFO msg="Seed data created" user=admin password=<24位随机hex> profile=Default groups=52 rules=37
+```
+请妥善保管此密码。删除数据库文件 (`config-hub.db`) 并重启可重新生成密码。
 
-首次登录后建议通过 Web GUI 修改密码（或通过注册接口创建新用户后禁用 admin）。
+首次登录后建议通过注册接口创建新用户（设置 `ENABLE_REGISTRATION=true`）并禁用 admin 用户。
 
 ### Docker
 
 ```bash
+# 使用 docker-compose（推荐）
+docker-compose up -d
+
+# 或手动构建并运行
 docker build -t config-hub .
-docker run -p 1323:1323 -v $(pwd)/config-hub.db:/app/config-hub.db config-hub
+docker run -p 1323:1323 -v $(pwd)/data:/data config-hub
 ```
+首次运行时查看日志获取 admin 密码：
+```bash
+docker logs config-hub 2>&1 | grep password
+```
+
+### 环境变量
+
+| 变量                  | 默认值               | 说明                       |
+| -------------------- | -------------------- | -------------------------- |
+| `DB_PATH`            | `config-hub.db`      | SQLite 数据库文件路径       |
+| `PORT`               | `1323`               | HTTP 监听端口               |
+| `ENABLE_REGISTRATION` | `false`              | 是否允许公开注册新用户       |
 
 ## 核心 API
 
@@ -110,6 +127,7 @@ config-hub/
 │   ├── profile.go         #   配置档案
 │   ├── proxy_group.go     #   代理组
 │   ├── rule_entry.go      #   规则条目
+│   ├── subscription_group.go #   组合订阅
 │   └── token.go           #   分发 Token
 ├── seed/                  # 种子数据（idempotent）
 │   ├── seed.go            #   种子执行入口
@@ -128,6 +146,7 @@ config-hub/
 │   │   ├── profile.go     #     档案 CRUD + 订阅关联
 │   │   ├── token.go       #     Token 生成/列出/吊销
 │   │   ├── export.go      #     YAML 预览 + 导出
+│   │   ├── subscription_group.go # 组合订阅 CRUD
 │   │   └── sub_endpoint.go #   公共 /sub 端点
 │   └── middleware/
 │       └── jwt.go         #   JWT 认证 + SubToken 认证中间件
@@ -164,7 +183,7 @@ config-hub/
 | 数据库    | SQLite（glebarez/sqlite 纯 Go 驱动）  |
 | 认证      | bcrypt + JWT (golang-jwt)             |
 | 定时任务  | robfig/cron v3                        |
-| 订阅解析  | Mihomo `convert.ConvertsV2Ray`        |
+| 订阅解析  | Mihomo `convert.ConvertsV2Ray`（远程依赖，go build 时自动拉取） |
 | 前端框架  | React 19                              |
 | 构建工具  | Vite 8                                |
 | 类型系统  | TypeScript 6                          |

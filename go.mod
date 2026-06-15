@@ -5,7 +5,7 @@ go 1.26.3
 require (
 	github.com/glebarez/sqlite v1.11.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
-	github.com/labstack/echo/v4 v4.15.2
+	github.com/labstack/echo/v4 v4.15.3
 	github.com/metacubex/mihomo v1.19.27
 	github.com/robfig/cron/v3 v3.0.1
 	golang.org/x/crypto v0.53.0

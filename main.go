@@ -22,7 +22,11 @@ func main() {
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelInfo})))
 
 	// Initialize database
-	if err := db.Init("config-hub.db"); err != nil {
+	dbPath := os.Getenv("DB_PATH")
+	if dbPath == "" {
+		dbPath = "config-hub.db"
+	}
+	if err := db.Init(dbPath); err != nil {
 		slog.Error("Failed to initialize database", "error", err)
 		os.Exit(1)
 	}
