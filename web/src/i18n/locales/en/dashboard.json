@@ -1,4 +1,9 @@
 {
+  "stats": {
+    "users": "Users",
+    "subscriptions": "Subscriptions",
+    "profiles": "Profiles"
+  },
   "profiles": {
     "title": "Profiles",
     "empty": "No profiles found",

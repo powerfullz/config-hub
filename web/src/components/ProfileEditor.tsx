@@ -1,11 +1,30 @@
 import { useState, useEffect } from 'react';
 import {
-  Modal, Form, Input, Select, Switch, InputNumber,
-  Space, Button, Popconfirm, Checkbox, Divider, Spin, message, Row, Col,
-} from 'antd';
+  Modal,
+  Button,
+  TextField,
+  Input,
+  Label,
+  FieldError,
+  Select,
+  ListBoxItem,
+  SelectTrigger,
+  SelectValue,
+  SelectIndicator,
+  SelectPopover,
+  Switch,
+  NumberField,
+  Checkbox,
+  CheckboxGroup,
+  Separator,
+  useOverlayState,
+} from '@heroui/react';
 import type { Profile, Subscription, SubscriptionGroup } from '../types';
 import { api } from '../api/client';
 import { useTranslation } from '../i18n';
+import { notifySuccess, notifyError } from '../utils/notifications';
+import { confirm } from '../utils/confirm';
+import { LoadingState } from './EmptyState';
 
 interface Props {
   open: boolean;
@@ -14,15 +33,54 @@ interface Props {
   onSaved: () => void;
 }
 
+const SWITCH_KEYS = [
+  'landing',
+  'ipv6',
+  'tun',
+  'full',
+  'keep_alive',
+  'fake_ip',
+  'quic',
+  'regex',
+] as const;
+
+type SwitchKey = (typeof SWITCH_KEYS)[number];
+
+type Switches = Record<SwitchKey, boolean>;
+
+const GROUP_TYPE_OPTIONS = [
+  { id: '0', labelKey: 'groupType.select' },
+  { id: '1', labelKey: 'groupType.urlTest' },
+  { id: '2', labelKey: 'groupType.loadBalance' },
+] as const;
+
 export default function ProfileEditor({ open, profile, onClose, onSaved }: Props) {
   const { t } = useTranslation('profileEditor');
   const { t: tc } = useTranslation('common');
-  const [form] = Form.useForm();
-  const [loading, setLoading] = useState(false);
+  const state = useOverlayState({ isOpen: open, defaultOpen: false });
+
+  const [name, setName] = useState('');
+  const [fileName, setFileName] = useState('');
+  const [groupType, setGroupType] = useState('0');
+  const [threshold, setThreshold] = useState<number | undefined>(undefined);
+  const [switches, setSwitches] = useState<Switches>({
+    landing: false,
+    ipv6: false,
+    tun: false,
+    full: false,
+    keep_alive: false,
+    fake_ip: false,
+    quic: false,
+    regex: false,
+  });
+  const [selectedSubs, setSelectedSubs] = useState<string[]>([]);
+  const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
+
   const [subs, setSubs] = useState<Subscription[]>([]);
   const [groups, setGroups] = useState<SubscriptionGroup[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(false);
-  const [messageApi, contextHolder] = message.useMessage();
+  const [saving, setSaving] = useState(false);
+
   const isEdit = !!profile;
 
   // Load subscriptions and groups when modal opens
@@ -41,14 +99,13 @@ export default function ProfileEditor({ open, profile, onClose, onSaved }: Props
 
   // Pre-fill form when editing
   useEffect(() => {
-    if (!open) {
-      form.resetFields();
-      return;
-    }
+    if (!open) return;
     if (profile) {
-      form.setFieldsValue({
-        name: profile.name,
-        group_type: profile.group_type,
+      setName(profile.name);
+      setFileName(profile.file_name || '');
+      setGroupType(String(profile.group_type));
+      setThreshold(profile.threshold || undefined);
+      setSwitches({
         landing: profile.landing,
         ipv6: profile.ipv6,
         tun: profile.tun,
@@ -57,32 +114,49 @@ export default function ProfileEditor({ open, profile, onClose, onSaved }: Props
         fake_ip: profile.fake_ip,
         quic: profile.quic,
         regex: profile.regex,
-        threshold: profile.threshold,
-        file_name: profile.file_name || '',
       });
-      // Load profile's current subscriptions and groups for checkbox pre-selection
+      // Load profile's current subscriptions and groups
       api.get<Profile>(`/api/profiles/${profile.id}`).then(p => {
-        form.setFieldsValue({
-          subscription_ids: p.subscriptions?.map(s => s.id) ?? [],
-          subscription_group_ids: p.subscription_groups?.map(g => g.id) ?? [],
-        });
+        setSelectedSubs(p.subscriptions?.map(s => String(s.id)) ?? []);
+        setSelectedGroups(p.subscription_groups?.map(g => String(g.id)) ?? []);
       }).catch(() => {});
     } else {
-      form.resetFields();
-      form.setFieldsValue({
-        group_type: 0,
-        threshold: 0,
-        file_name: '',
+      setName('');
+      setFileName('');
+      setGroupType('0');
+      setThreshold(undefined);
+      setSwitches({
+        landing: false,
+        ipv6: false,
+        tun: false,
+        full: false,
+        keep_alive: false,
+        fake_ip: false,
+        quic: false,
+        regex: false,
       });
+      setSelectedSubs([]);
+      setSelectedGroups([]);
     }
-  }, [open, profile, form]);
+  }, [open, profile]);
 
-  const handleSubmit = async () => {
+  const updateSwitch = (key: SwitchKey, value: boolean) => {
+    setSwitches(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+
+    setSaving(true);
     try {
-      const values = await form.validateFields();
-      const { subscription_ids, subscription_group_ids, ...profileData } = values;
-
-      setLoading(true);
+      const profileData: Record<string, unknown> = {
+        name: name.trim(),
+        file_name: fileName.trim(),
+        group_type: Number(groupType),
+        threshold: threshold ?? 0,
+        ...switches,
+      };
 
       if (isEdit) {
         // Build diff payload (only changed fields)
@@ -96,208 +170,190 @@ export default function ProfileEditor({ open, profile, onClose, onSaved }: Props
           await api.updateProfile(profile!.id, payload);
         }
       } else {
-        const created = await api.createProfile(profileData as Record<string, unknown>);
+        const created = await api.createProfile(profileData);
         // Associate subscriptions
-        if (subscription_ids?.length) {
-          for (const sid of subscription_ids) {
-            await api.post(`/api/profiles/${created.id}/subscriptions`, { subscription_id: sid }).catch(() => {});
+        if (selectedSubs.length > 0) {
+          for (const sid of selectedSubs) {
+            await api.post(`/api/profiles/${created.id}/subscriptions`, { subscription_id: Number(sid) }).catch(() => {});
           }
         }
         // Associate subscription groups
-        if (subscription_group_ids?.length) {
-          for (const gid of subscription_group_ids) {
-            await api.post(`/api/profiles/${created.id}/subscription-groups`, { subscription_group_id: gid }).catch(() => {});
+        if (selectedGroups.length > 0) {
+          for (const gid of selectedGroups) {
+            await api.post(`/api/profiles/${created.id}/subscription-groups`, { subscription_group_id: Number(gid) }).catch(() => {});
           }
         }
       }
 
-      messageApi.success(isEdit ? t('message.updated') : t('message.created'));
+      notifySuccess(isEdit ? t('message.updated') : t('message.created'));
       onSaved();
       onClose();
     } catch (err: unknown) {
-      if (err instanceof Error) messageApi.error(err.message);
+      if (err instanceof Error) notifyError(err.message);
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
   const handleDelete = async () => {
     if (!profile) return;
-    setLoading(true);
+    const ok = await confirm({
+      title: tc('confirm.deleteProfile'),
+      message: tc('confirm.deleteProfileMessage'),
+      danger: true,
+      confirmText: tc('confirm.delete'),
+      cancelText: tc('confirm.cancel'),
+    });
+    if (!ok) return;
+
+    setSaving(true);
     try {
       await api.deleteProfile(profile.id);
-      messageApi.success(t('message.deleted'));
+      notifySuccess(t('message.deleted'));
       onSaved();
       onClose();
     } catch (err: unknown) {
-      if (err instanceof Error) messageApi.error(err.message);
+      if (err instanceof Error) notifyError(err.message);
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
   return (
-    <>
-      {contextHolder}
-      <Modal
-        title={isEdit ? t('modal.titleEdit') : t('modal.titleCreate')}
-        open={open}
-        onCancel={onClose}
-        destroyOnClose
-        width={560}
-        footer={
-          <Space style={{ width: '100%', justifyContent: 'space-between' }}>
-            <span>
+    <Modal.Root state={state} onOpenChange={isOpen => { if (!isOpen) onClose(); }}>
+      <Modal.Backdrop />
+      <Modal.Container size="md">
+        <Modal.Dialog>
+          <form onSubmit={handleSubmit}>
+            <Modal.Header>
+              <Modal.Heading>{isEdit ? t('modal.titleEdit') : t('modal.titleCreate')}</Modal.Heading>
+              <Modal.CloseTrigger />
+            </Modal.Header>
+            <Modal.Body className="flex flex-col gap-4">
+              {/* Name */}
+              <TextField value={name} onChange={setName} isRequired>
+                <Label>{t('field.name')}</Label>
+                <Input autoFocus />
+                <FieldError>{t('field.nameRequired')}</FieldError>
+              </TextField>
+
+              {/* File Name */}
+              <TextField value={fileName} onChange={setFileName}>
+                <Label>{t('field.fileName')}</Label>
+                <Input placeholder={t('field.fileNamePlaceholder')} />
+              </TextField>
+
+              {/* Group Type */}
+              <Select selectedKey={groupType} onSelectionChange={key => setGroupType(String(key))}>
+                <Label>{t('field.groupType')}</Label>
+                <SelectTrigger>
+                  <SelectValue />
+                  <SelectIndicator />
+                </SelectTrigger>
+                <SelectPopover>
+                  {GROUP_TYPE_OPTIONS.map(opt => (
+                    <ListBoxItem key={opt.id} id={opt.id}>
+                      {tc(opt.labelKey)}
+                    </ListBoxItem>
+                  ))}
+                </SelectPopover>
+              </Select>
+
+              {/* Threshold */}
+              <NumberField
+                value={threshold}
+                onChange={(val: number | null) => setThreshold(val ?? undefined)}
+                minValue={0}
+              >
+                <Label>{t('field.threshold')}</Label>
+                <NumberField.Input />
+              </NumberField>
+
+              <Separator />
+
+              {/* Switches in 2-column grid */}
+              <div className="grid grid-cols-2 gap-4">
+                {SWITCH_KEYS.map(key => (
+                  <Switch
+                    key={key}
+                    isSelected={switches[key]}
+                    onChange={e => updateSwitch(key, e)}
+                  >
+                    <Switch.Content>
+                      <Switch.Control>
+                        <Switch.Thumb />
+                      </Switch.Control>
+                      {t(`field.${key === 'keep_alive' ? 'keepAlive' : key === 'fake_ip' ? 'fakeIp' : key}`)}
+                    </Switch.Content>
+                  </Switch>
+                ))}
+              </div>
+
+              <Separator />
+
+              {/* Subscription Groups */}
+              <div className="flex flex-col gap-2">
+                <Label>{t('section.subscriptionGroups')}</Label>
+                {loadingOptions ? (
+                  <LoadingState />
+                ) : groups.length === 0 ? (
+                  <p className="text-sm text-default-500">{t('empty.noGroups')}</p>
+                ) : (
+                  <CheckboxGroup value={selectedGroups} onChange={setSelectedGroups}>
+                    {groups.map(g => (
+                      <Checkbox key={g.id} value={String(g.id)}>
+                        <Checkbox.Content>
+                          <Checkbox.Control>
+                            <Checkbox.Indicator />
+                          </Checkbox.Control>
+                          {g.name}
+                        </Checkbox.Content>
+                      </Checkbox>
+                    ))}
+                  </CheckboxGroup>
+                )}
+              </div>
+
+              {/* Subscriptions */}
+              <div className="flex flex-col gap-2">
+                <Label>{t('section.subscriptions')}</Label>
+                {loadingOptions ? (
+                  <LoadingState />
+                ) : subs.length === 0 ? (
+                  <p className="text-sm text-default-500">{t('empty.noSubscriptions')}</p>
+                ) : (
+                  <CheckboxGroup value={selectedSubs} onChange={setSelectedSubs}>
+                    {subs.map(s => (
+                      <Checkbox key={s.id} value={String(s.id)}>
+                        <Checkbox.Content>
+                          <Checkbox.Control>
+                            <Checkbox.Indicator />
+                          </Checkbox.Control>
+                          {s.name}
+                        </Checkbox.Content>
+                      </Checkbox>
+                    ))}
+                  </CheckboxGroup>
+                )}
+              </div>
+            </Modal.Body>
+            <Modal.Footer>
               {isEdit && (
-                <Popconfirm
-                  title={t('delete.confirm')}
-                  onConfirm={handleDelete}
-                  okText={t('delete.button')}
-                  okType="danger"
-                  cancelText={tc('button.cancel')}
-                >
-                  <Button danger>{t('delete.button')}</Button>
-                </Popconfirm>
+                <Button type="button" variant="danger" onPress={handleDelete} isDisabled={saving}>
+                  {t('delete.button')}
+                </Button>
               )}
-            </span>
-            <Space>
-              <Button onClick={onClose}>{tc('button.cancel')}</Button>
-              <Button type="primary" loading={loading} onClick={handleSubmit}>
+              <div className="flex-1" />
+              <Button type="button" variant="ghost" onPress={() => state.close()} isDisabled={saving}>
+                {tc('button.cancel')}
+              </Button>
+              <Button type="submit" variant="primary" isDisabled={saving}>
                 {tc('button.save')}
               </Button>
-            </Space>
-          </Space>
-        }
-      >
-        <Form form={form} layout="vertical">
-          <Form.Item
-            name="name"
-            label={t('field.name')}
-            rules={[{ required: true, message: t('field.nameRequired') }]}
-          >
-            <Input autoFocus />
-          </Form.Item>
-
-          <Form.Item
-            name="file_name"
-            label={t('field.fileName')}
-          >
-            <Input placeholder={t('field.fileNamePlaceholder')} />
-          </Form.Item>
-
-          <Form.Item name="group_type" label={t('field.groupType')}>
-            <Select
-              options={[
-                { value: 0, label: tc('groupType.select') },
-                { value: 1, label: tc('groupType.urlTest') },
-                { value: 2, label: tc('groupType.loadBalance') },
-              ]}
-            />
-          </Form.Item>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="landing" label={t('field.landing')} valuePropName="checked">
-                <Switch />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="ipv6" label={t('field.ipv6')} valuePropName="checked">
-                <Switch />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="tun" label={t('field.tun')} valuePropName="checked">
-                <Switch />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="full" label={t('field.full')} valuePropName="checked">
-                <Switch />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="keep_alive" label={t('field.keepAlive')} valuePropName="checked">
-                <Switch />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="fake_ip" label={t('field.fakeIp')} valuePropName="checked">
-                <Switch />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="quic" label={t('field.quic')} valuePropName="checked">
-                <Switch />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="regex" label={t('field.regex')} valuePropName="checked">
-                <Switch />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item name="threshold" label={t('field.threshold')}>
-            <InputNumber min={0} style={{ width: '100%' }} />
-          </Form.Item>
-
-          <Divider titlePlacement="left" plain>
-             {t('section.subscriptions')}
-          </Divider>
-          {loadingOptions ? (
-            <div style={{ textAlign: 'center', padding: 16 }}>
-              <Spin />
-            </div>
-          ) : subs.length === 0 ? (
-            <div style={{ color: '#999', padding: 8 }}>
-               {t('empty.noSubscriptions')}
-            </div>
-          ) : (
-            <Form.Item name="subscription_ids">
-              <Checkbox.Group style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {subs.map(s => (
-                  <Checkbox key={s.id} value={s.id}>
-                    {s.name}
-                  </Checkbox>
-                ))}
-              </Checkbox.Group>
-            </Form.Item>
-          )}
-
-          <Divider titlePlacement="left" plain>
-             {t('section.subscriptionGroups')}
-          </Divider>
-          {loadingOptions ? (
-            <div style={{ textAlign: 'center', padding: 16 }}>
-              <Spin />
-            </div>
-          ) : groups.length === 0 ? (
-            <div style={{ color: '#999', padding: 8 }}>
-               {t('empty.noGroups')}
-            </div>
-          ) : (
-            <Form.Item name="subscription_group_ids">
-              <Checkbox.Group style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {groups.map(g => (
-                  <Checkbox key={g.id} value={g.id}>
-                    {g.name}
-                  </Checkbox>
-                ))}
-              </Checkbox.Group>
-            </Form.Item>
-          )}
-        </Form>
-      </Modal>
-    </>
+            </Modal.Footer>
+          </form>
+        </Modal.Dialog>
+      </Modal.Container>
+    </Modal.Root>
   );
 }

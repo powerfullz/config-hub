@@ -1,4 +1,9 @@
 {
+  "stats": {
+    "users": "用户",
+    "subscriptions": "订阅",
+    "profiles": "配置"
+  },
   "profiles": {
     "title": "覆写方案",
     "empty": "暂无方案",

@@ -1,31 +1,44 @@
 import { useState, useCallback } from 'react';
 import { api } from '../api/client';
 import type { User } from '../types';
+import {
+  setAuthToken,
+  removeAuthToken,
+  getStoredUser,
+  setStoredUser,
+  removeStoredUser,
+} from './useAuthStorage';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(() => {
-    const stored = localStorage.getItem('user');
+    const stored = getStoredUser();
     return stored ? JSON.parse(stored) : null;
   });
 
-  const login = useCallback(async (username: string, password: string) => {
+  const login = useCallback(async (username: string, password: string, rememberMe: boolean = true) => {
     const res = await api.post<{ token: string }>('/api/auth/login', { username, password });
-    localStorage.setItem('token', res.token);
+    setAuthToken(res.token, rememberMe);
     // Fetch user info
     const u = await api.get<User>('/api/auth/me');
-    localStorage.setItem('user', JSON.stringify(u));
+    setStoredUser(JSON.stringify(u), rememberMe);
     setUser(u);
     return u;
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    removeAuthToken();
+    removeStoredUser();
     setUser(null);
   }, []);
 
   const updateUser = useCallback((updatedUser: User) => {
-    localStorage.setItem('user', JSON.stringify(updatedUser));
+    // Persist to whichever storage currently holds the user
+    const serialized = JSON.stringify(updatedUser);
+    if (localStorage.getItem('user') !== null) {
+      localStorage.setItem('user', serialized);
+    } else {
+      sessionStorage.setItem('user', serialized);
+    }
     setUser(updatedUser);
   }, []);
 

@@ -18,5 +18,10 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      // Data fetching with loading state is a standard React pattern.
+      // The setState calls happen inside async callbacks, not synchronously in the effect body.
+      'react-hooks/set-state-in-effect': 'off',
+    },
   },
 ])

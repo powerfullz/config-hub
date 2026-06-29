@@ -1,103 +1,106 @@
 import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { Form, Input, Button, Card, Typography, Alert, Space, theme } from 'antd';
-import { UserOutlined, LockOutlined } from '@ant-design/icons';
+import { Button, TextField, Input, Label, FieldError, Checkbox } from '@heroui/react';
 import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from '../i18n';
-
-const { Title } = Typography;
-
-interface LoginFormValues {
-  username: string;
-  password: string;
-}
+import { notifyError } from '../utils/notifications';
 
 export default function Login() {
+  const navigate = useNavigate();
   const { login, isLoggedIn } = useAuth();
   const { t } = useTranslation('common');
-  const { token: themeToken } = theme.useToken();
-  const navigate = useNavigate();
-  const [error, setError] = useState('');
+
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   if (isLoggedIn) return <Navigate to="/" replace />;
 
-  const handleSubmit = async (values: LoginFormValues) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!username.trim() || !password.trim()) {
+      setError(t('login.usernameRequired'));
+      return;
+    }
+
     setError('');
     setLoading(true);
+
     try {
-      await login(values.username, values.password);
-      navigate('/');
+      await login(username, password, rememberMe);
+      navigate('/', { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('login.failed'));
+      const msg = err instanceof Error ? err.message : t('login.failed');
+      setError(msg);
+      notifyError(msg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      background: themeToken.colorBgLayout,
-    }}>
-      <Card style={{ width: 400 }}>
-        <Space orientation="vertical" size="large" style={{ width: '100%' }}>
-          <Title level={2} style={{ textAlign: 'center', margin: 0 }}>
-            {t('login.title')}
-          </Title>
+    <div className="min-h-screen flex">
+      {/* Left Branding Panel */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary to-primary-600 items-center justify-center p-12">
+        <div className="text-white text-center">
+          <h1 className="text-5xl font-bold mb-4">Config Hub</h1>
+          <p className="text-xl opacity-90">Manage your proxy configurations</p>
+        </div>
+      </div>
 
-          {error && (
-            <Alert
-              title={error}
-              type="error"
-              showIcon
-              closable
-              onClose={() => setError('')}
-            />
-          )}
+      {/* Right Login Panel */}
+      <div className="flex-1 flex items-center justify-center p-8 bg-default-50">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-foreground">{t('login.title')}</h2>
+            <p className="text-default-500 mt-2">{t('login.subtitle')}</p>
+          </div>
 
-          <Form
-            name="login"
-            onFinish={handleSubmit}
-            autoComplete="off"
-            size="large"
-          >
-            <Form.Item
-              name="username"
-              rules={[{ required: true, message: t('login.usernameRequired') }]}
-            >
-              <Input
-                prefix={<UserOutlined />}
-                placeholder={t('login.usernamePlaceholder')}
-              />
-            </Form.Item>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <TextField value={username} onChange={setUsername} isRequired>
+              <Label>{t('login.usernamePlaceholder')}</Label>
+              <Input autoFocus />
+              <FieldError>{t('login.usernameRequired')}</FieldError>
+            </TextField>
 
-            <Form.Item
-              name="password"
-              rules={[{ required: true, message: t('login.passwordRequired') }]}
-            >
-              <Input.Password
-                prefix={<LockOutlined />}
-                placeholder={t('login.passwordPlaceholder')}
-              />
-            </Form.Item>
+            <TextField value={password} onChange={setPassword} type="password" isRequired>
+              <Label>{t('login.passwordPlaceholder')}</Label>
+              <Input />
+              <FieldError>{t('login.passwordRequired')}</FieldError>
+            </TextField>
 
-            <Form.Item>
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={loading}
-                block
-              >
-                {t('login.submit')}
-              </Button>
-            </Form.Item>
-          </Form>
-        </Space>
-      </Card>
+            <div className="flex items-center justify-between">
+              <Checkbox isSelected={rememberMe} onChange={setRememberMe}>
+                <Checkbox.Content>
+                  <Checkbox.Control>
+                    <Checkbox.Indicator />
+                  </Checkbox.Control>
+                  {t('login.rememberMe')}
+                </Checkbox.Content>
+              </Checkbox>
+              <button type="button" className="text-sm text-primary hover:underline" disabled>
+                {t('login.forgotPassword')}
+              </button>
+            </div>
+
+            {error && (
+              <div className="p-3 rounded-lg bg-danger-50 text-danger text-sm">
+                {error}
+              </div>
+            )}
+
+            <Button type="submit" variant="primary" className="w-full" isDisabled={loading}>
+              {loading ? t('login.submitting') : t('login.submit')}
+            </Button>
+          </form>
+
+          <div className="mt-8 text-center text-sm text-default-500">
+            {t('footer.copyright')}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

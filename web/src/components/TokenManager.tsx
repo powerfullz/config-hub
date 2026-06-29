@@ -1,37 +1,32 @@
 import { useState, useEffect, useCallback } from 'react';
-import { api } from '../api/client';
-import type { Token, TokenCreateResponse } from '../types';
 import {
   Card,
   Table,
+  TableHeader,
+  TableBody,
+  TableColumn,
+  TableRow,
+  TableCell,
   Button,
   Modal,
+  TextField,
   Input,
-  message,
-  Tag,
-  Popconfirm,
-  Typography,
-  Space,
-  Empty,
-} from 'antd';
-import {
-  PlusOutlined,
-  LinkOutlined,
-  CopyOutlined,
-  KeyOutlined,
-} from '@ant-design/icons';
+  Label,
+  FieldError,
+  Chip,
+  useOverlayState,
+} from '@heroui/react';
+import { Copy, Key, Link } from 'lucide-react';
+import { api } from '../api/client';
+import type { Token, TokenCreateResponse } from '../types';
 import { useTranslation } from '../i18n';
-import i18n from '../i18n';
-
-const { Text } = Typography;
+import { notifySuccess, notifyError } from '../utils/notifications';
+import { confirm } from '../utils/confirm';
+import { formatDateTime } from '../utils/date';
+import { EmptyState, LoadingState } from './EmptyState';
 
 interface TokenManagerProps {
   profileId: number;
-}
-
-function formatDate(raw: string | null | undefined): string {
-  if (!raw) return '\u2014';
-  return new Date(raw).toLocaleString(i18n.language);
 }
 
 export default function TokenManager({ profileId }: TokenManagerProps) {
@@ -39,11 +34,11 @@ export default function TokenManager({ profileId }: TokenManagerProps) {
   const { t: tc } = useTranslation('common');
   const [tokens, setTokens] = useState<Token[]>([]);
   const [loading, setLoading] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
   const [tokenName, setTokenName] = useState('');
   const [creating, setCreating] = useState(false);
   const [newToken, setNewToken] = useState<TokenCreateResponse | null>(null);
-  const [messageApi, contextHolder] = message.useMessage();
+
+  const modalState = useOverlayState({ defaultOpen: false });
 
   const fetchTokens = useCallback(async () => {
     setLoading(true);
@@ -51,17 +46,18 @@ export default function TokenManager({ profileId }: TokenManagerProps) {
       const data = await api.listTokens(profileId);
       setTokens(data);
     } catch (e: unknown) {
-      messageApi.error(e instanceof Error ? e.message : t('token.message.loadFailed'));
+      notifyError(e instanceof Error ? e.message : t('token.message.loadFailed'));
     } finally {
       setLoading(false);
     }
-  }, [profileId, messageApi, t]);
+  }, [profileId, t]);
 
   useEffect(() => {
     fetchTokens();
   }, [fetchTokens]);
 
-  const handleCreate = async () => {
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
     const trimmed = tokenName.trim();
     if (!trimmed) return;
 
@@ -71,34 +67,43 @@ export default function TokenManager({ profileId }: TokenManagerProps) {
       setNewToken(result);
       setTokenName('');
       await fetchTokens();
-      messageApi.success(t('token.message.created'));
+      notifySuccess(t('token.message.created'));
     } catch (e: unknown) {
-      messageApi.error(e instanceof Error ? e.message : t('token.message.createFailed'));
+      notifyError(e instanceof Error ? e.message : t('token.message.createFailed'));
     } finally {
       setCreating(false);
     }
   };
 
   const handleRevoke = async (tokenId: number) => {
+    const ok = await confirm({
+      title: tc('confirm.revokeToken'),
+      message: tc('confirm.revokeTokenMessage'),
+      danger: true,
+      confirmText: tc('button.revoke'),
+      cancelText: tc('button.cancel'),
+    });
+    if (!ok) return;
+
     try {
       await api.revokeToken(profileId, tokenId);
-      messageApi.success(t('token.message.revoked'));
+      notifySuccess(t('token.message.revoked'));
       await fetchTokens();
     } catch (e: unknown) {
-      messageApi.error(e instanceof Error ? e.message : t('token.message.revokeFailed'));
+      notifyError(e instanceof Error ? e.message : t('token.message.revokeFailed'));
     }
   };
 
   const copyToClipboard = async (text: string, label: string) => {
     if (!navigator.clipboard) {
-      messageApi.error(t('token.message.clipboardUnavailable'));
+      notifyError(t('token.message.clipboardUnavailable'));
       return;
     }
     try {
       await navigator.clipboard.writeText(text);
-      messageApi.success(t('token.message.copied', { label }));
+      notifySuccess(t('token.message.copied', { label }));
     } catch {
-      messageApi.error(t('token.message.copyFailed'));
+      notifyError(t('token.message.copyFailed'));
     }
   };
 
@@ -109,195 +114,162 @@ export default function TokenManager({ profileId }: TokenManagerProps) {
   const handleOpenCreate = () => {
     setNewToken(null);
     setTokenName('');
-    setModalOpen(true);
+    modalState.open();
   };
 
   const handleCloseModal = () => {
-    setModalOpen(false);
+    modalState.close();
     setNewToken(null);
     setTokenName('');
   };
 
-  const columns = [
-    {
-      title: t('token.table.name'),
-      dataIndex: 'name',
-      key: 'name',
-    },
-    {
-      title: t('token.table.created'),
-      dataIndex: 'created_at',
-      key: 'created_at',
-      render: (v: string) => formatDate(v),
-    },
-    {
-      title: t('token.table.lastUsed'),
-      dataIndex: 'last_used_at',
-      key: 'last_used_at',
-      render: (v: string | null) => formatDate(v),
-    },
-    {
-      title: t('token.table.status'),
-      dataIndex: 'revoked',
-      key: 'revoked',
-      render: (revoked: boolean) =>
-        revoked ? (
-          <Tag color="red">{t('token.status.revoked')}</Tag>
-        ) : (
-          <Tag color="green">{t('token.status.active')}</Tag>
-        ),
-    },
-    {
-      title: t('token.table.actions'),
-      key: 'actions',
-      render: (_: unknown, record: Token) => (
-        <Popconfirm
-          title={t('token.revokeConfirm')}
-          onConfirm={() => handleRevoke(record.id)}
-          okText={tc('button.revoke')}
-          cancelText={tc('button.cancel')}
-          okButtonProps={{ danger: true }}
-        >
-          <Button type="link" danger size="small" disabled={record.revoked}>
-            {tc('button.revoke')}
-          </Button>
-        </Popconfirm>
-      ),
-    },
-  ];
-
   return (
     <>
-      {contextHolder}
-      <Card
-        title={
-          <Space>
-            <LinkOutlined />
-            <span>{t('token.title')}</span>
-          </Space>
-        }
-        extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenCreate}>
-            {t('token.generateButton')}
-          </Button>
-        }
-      >
-        <Table
-          dataSource={tokens}
-          columns={columns}
-          rowKey="id"
-          loading={loading}
-          size="small"
-          pagination={false}
-          locale={{ emptyText: <Empty description={t('token.empty')} /> }}
-        />
+      <Card>
+        <Card.Header>
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2">
+              <Link className="w-5 h-5 text-default-500" />
+              <Card.Title>{t('token.title')}</Card.Title>
+            </div>
+            <Button variant="primary" size="sm" onPress={handleOpenCreate}>
+              <Key className="w-4 h-4 mr-2" />
+              {t('token.generateButton')}
+            </Button>
+          </div>
+        </Card.Header>
+        <Card.Content>
+          {loading ? (
+            <LoadingState />
+          ) : tokens.length === 0 ? (
+            <EmptyState message={t('token.empty')} />
+          ) : (
+            <Table aria-label={t('token.title')}>
+              <TableHeader>
+                <TableColumn>{t('token.table.name')}</TableColumn>
+                <TableColumn>{t('token.table.created')}</TableColumn>
+                <TableColumn>{t('token.table.lastUsed')}</TableColumn>
+                <TableColumn>{t('token.table.status')}</TableColumn>
+                <TableColumn>{t('token.table.actions')}</TableColumn>
+              </TableHeader>
+              <TableBody>
+                {tokens.map(token => (
+                  <TableRow key={token.id}>
+                    <TableCell>{token.name}</TableCell>
+                    <TableCell>{formatDateTime(token.created_at)}</TableCell>
+                    <TableCell>{token.last_used_at ? formatDateTime(token.last_used_at) : '\u2014'}</TableCell>
+                    <TableCell>
+                      <Chip color={token.revoked ? 'danger' : 'success'} size="sm" variant="soft">
+                        {token.revoked ? t('token.status.revoked') : t('token.status.active')}
+                      </Chip>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="danger-soft"
+                        size="sm"
+                        isDisabled={token.revoked}
+                        onPress={() => handleRevoke(token.id)}
+                      >
+                        {tc('button.revoke')}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </Card.Content>
       </Card>
 
-      <Modal
-        title={t('token.modalTitle')}
-        open={modalOpen}
-        onCancel={handleCloseModal}
-        footer={
-          newToken
-            ? [
-                <Button key="done" type="primary" onClick={handleCloseModal}>
-                  {tc('button.done')}
-                </Button>,
-              ]
-            : [
-                <Button key="cancel" onClick={handleCloseModal}>
-                  {tc('button.cancel')}
-                </Button>,
-                <Button
-                  key="create"
-                  type="primary"
-                  loading={creating}
-                  onClick={handleCreate}
-                  disabled={!tokenName.trim()}
-                >
-                  {tc('button.create')}
-                </Button>,
-              ]
-        }
-      >
-        {!newToken ? (
-          <div style={{ padding: '8px 0' }}>
-            <Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
-              {t('token.formHint')}
-            </Text>
-            <Input
-              placeholder={t('token.placeholder')}
-              value={tokenName}
-              onChange={e => setTokenName(e.target.value)}
-              onPressEnter={handleCreate}
-              autoFocus
-              maxLength={64}
-            />
-          </div>
-        ) : (
-          <div style={{ padding: '8px 0' }}>
-            <Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
-              {t('token.createdHint')}
-            </Text>
+      {/* Generate Token Modal */}
+      <Modal.Root state={modalState} onOpenChange={isOpen => { if (!isOpen) handleCloseModal(); }}>
+        <Modal.Backdrop />
+        <Modal.Container size="sm">
+          <Modal.Dialog>
+            {!newToken ? (
+              <form onSubmit={handleCreate}>
+                <Modal.Header>
+                  <Modal.Heading>{t('token.modalTitle')}</Modal.Heading>
+                  <Modal.CloseTrigger />
+                </Modal.Header>
+                <Modal.Body className="flex flex-col gap-4">
+                  <p className="text-sm text-default-500">{t('token.formHint')}</p>
+                  <TextField value={tokenName} onChange={setTokenName} isRequired>
+                    <Label>{t('token.placeholder')}</Label>
+                    <Input autoFocus maxLength={64} />
+                    <FieldError />
+                  </TextField>
+                </Modal.Body>
+                <Modal.Footer>
+                  <Button type="button" variant="ghost" onPress={handleCloseModal}>
+                    {tc('button.cancel')}
+                  </Button>
+                  <Button type="submit" variant="primary" isDisabled={creating || !tokenName.trim()}>
+                    {tc('button.create')}
+                  </Button>
+                </Modal.Footer>
+              </form>
+            ) : (
+              <>
+                <Modal.Header>
+                  <Modal.Heading>{t('token.modalTitle')}</Modal.Heading>
+                  <Modal.CloseTrigger />
+                </Modal.Header>
+                <Modal.Body className="flex flex-col gap-4">
+                  <p className="text-sm text-default-500">{t('token.createdHint')}</p>
 
-            <div style={{ marginBottom: 20 }}>
-              <Text strong style={{ display: 'block', marginBottom: 6 }}>
-                <KeyOutlined style={{ marginRight: 6 }} />
-                {t('token.rawToken')}
-              </Text>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                <Text
-                  code
-                  copyable
-                  style={{
-                    flex: 1,
-                    wordBreak: 'break-all',
-                    fontSize: 12,
-                    padding: '6px 10px',
-                  }}
-                >
-                  {newToken.token}
-                </Text>
-                <Button
-                  icon={<CopyOutlined />}
-                  size="small"
-                  onClick={() => copyToClipboard(newToken.token, 'Token')}
-                >
-                  {tc('button.copy')}
-                </Button>
-              </div>
-            </div>
+                  {/* Raw Token */}
+                  <div className="flex flex-col gap-2">
+                    <Label>
+                      <Key className="w-4 h-4 inline mr-1" />
+                      {t('token.rawToken')}
+                    </Label>
+                    <div className="flex gap-2">
+                      <code className="flex-1 text-xs bg-default-100 rounded-lg px-3 py-2 break-all">
+                        {newToken.token}
+                      </code>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onPress={() => copyToClipboard(newToken.token, 'Token')}
+                      >
+                        <Copy className="w-4 h-4" />
+                        {tc('button.copy')}
+                      </Button>
+                    </div>
+                  </div>
 
-            <div>
-              <Text strong style={{ display: 'block', marginBottom: 6 }}>
-                <LinkOutlined style={{ marginRight: 6 }} />
-                {t('token.shareUrl')}
-              </Text>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                <Text
-                  code
-                  copyable
-                  style={{
-                    flex: 1,
-                    wordBreak: 'break-all',
-                    fontSize: 12,
-                    padding: '6px 10px',
-                  }}
-                >
-                  {shareUrl}
-                </Text>
-                <Button
-                  icon={<CopyOutlined />}
-                  size="small"
-                  onClick={() => copyToClipboard(shareUrl, 'URL')}
-                >
-                  {tc('button.copy')}
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-      </Modal>
+                  {/* Share URL */}
+                  <div className="flex flex-col gap-2">
+                    <Label>
+                      <Link className="w-4 h-4 inline mr-1" />
+                      {t('token.shareUrl')}
+                    </Label>
+                    <div className="flex gap-2">
+                      <code className="flex-1 text-xs bg-default-100 rounded-lg px-3 py-2 break-all">
+                        {shareUrl}
+                      </code>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onPress={() => copyToClipboard(shareUrl, 'URL')}
+                      >
+                        <Copy className="w-4 h-4" />
+                        {tc('button.copy')}
+                      </Button>
+                    </div>
+                  </div>
+                </Modal.Body>
+                <Modal.Footer>
+                  <Button variant="primary" onPress={handleCloseModal}>
+                    {tc('button.done')}
+                  </Button>
+                </Modal.Footer>
+              </>
+            )}
+          </Modal.Dialog>
+        </Modal.Container>
+      </Modal.Root>
     </>
   );
 }

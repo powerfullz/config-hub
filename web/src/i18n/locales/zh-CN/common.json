@@ -2,6 +2,18 @@
   "app": {
     "title": "Config Hub"
   },
+  "sidebar": {
+    "dashboard": "仪表盘",
+    "subscriptions": "订阅管理",
+    "settings": "设置"
+  },
+  "toolbar": {
+    "status": "状态",
+    "date": "日期"
+  },
+  "footer": {
+    "copyright": "© 2026 Config Hub. 保留所有权利。"
+  },
   "menu": {
     "dashboard": "仪表盘",
     "subscriptions": "订阅管理",
@@ -9,6 +21,9 @@
   },
   "header": {
     "logout": "退出登录"
+  },
+  "language": {
+    "toggle": "切换语言"
   },
   "button": {
     "cancel": "取消",
@@ -25,11 +40,17 @@
   },
   "login": {
     "title": "Config Hub",
+    "subtitle": "登录您的账户",
+    "username": "用户名",
+    "password": "密码",
     "usernamePlaceholder": "用户名",
     "usernameRequired": "请输入用户名",
     "passwordPlaceholder": "密码",
     "passwordRequired": "请输入密码",
+    "rememberMe": "记住我",
+    "forgotPassword": "忘记密码？",
     "submit": "登录",
+    "submitting": "登录中...",
     "failed": "登录失败"
   },
   "groupType": {
@@ -38,8 +59,21 @@
     "loadBalance": "负载均衡 (load-balance)"
   },
   "theme": {
+    "light": "浅色",
+    "dark": "深色",
+    "system": "跟随系统",
     "switchLight": "切换浅色模式",
     "switchDark": "切换深色模式"
+  },
+  "confirm": {
+    "delete": "删除",
+    "cancel": "取消",
+    "deleteProfile": "删除方案？",
+    "deleteProfileMessage": "此操作无法撤销。所有相关数据将被移除。",
+    "revokeToken": "撤销令牌？",
+    "revokeTokenMessage": "此令牌将不再生效。此操作无法撤销。",
+    "deleteSubscription": "删除订阅？",
+    "deleteSubscriptionMessage": "此操作无法撤销。所有相关节点将被移除。"
   },
   "account": {
     "title": "账户管理",

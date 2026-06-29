@@ -1,43 +1,62 @@
 import { useState } from 'react';
-import { Card, Form, Input, Button, Typography, Space, Descriptions, message } from 'antd';
-import { UserOutlined, LockOutlined } from '@ant-design/icons';
+import { Card, Button, TextField, Input, Label, FieldError } from '@heroui/react';
+import { User, Lock } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from '../i18n';
+import { formatDate } from '../utils/date';
+import { notifySuccess, notifyError } from '../utils/notifications';
 import { api } from '../api/client';
-import dayjs from 'dayjs';
-
-const { Title } = Typography;
-
-interface PasswordFormValues {
-  currentPassword: string;
-  newPassword: string;
-  confirmPassword: string;
-}
+import i18n from '../i18n';
 
 export default function Account() {
   const { user, updateUser } = useAuth();
   const { t } = useTranslation('common');
+
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [usernameLoading, setUsernameLoading] = useState(false);
   const [editingUsername, setEditingUsername] = useState(false);
   const [newUsername, setNewUsername] = useState(user?.username || '');
-  const [passwordForm] = Form.useForm<PasswordFormValues>();
 
-  const handleChangePassword = async (values: PasswordFormValues) => {
-    if (values.newPassword !== values.confirmPassword) {
-      message.error(t('account.passwordMismatch'));
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError('');
+
+    if (!currentPassword.trim()) {
+      setPasswordError(t('account.currentPasswordRequired'));
       return;
     }
+    if (!newPassword.trim()) {
+      setPasswordError(t('account.newPasswordRequired'));
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordError(t('account.newPasswordMinLength'));
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError(t('account.passwordMismatch'));
+      return;
+    }
+
     setPasswordLoading(true);
     try {
-      await api.changePassword(values.currentPassword, values.newPassword);
-      message.success(t('account.passwordChanged'));
-      passwordForm.resetFields();
-    } catch (err: any) {
-      if (err.message?.includes('incorrect')) {
-        message.error(t('account.wrongPassword'));
-      } else {
-        message.error(err.message || 'Change password failed');
+      await api.changePassword(currentPassword, newPassword);
+      notifySuccess(t('account.passwordChanged'));
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        if (err.message?.includes('incorrect')) {
+          notifyError(t('account.wrongPassword'));
+        } else {
+          notifyError(err.message);
+        }
       }
     } finally {
       setPasswordLoading(false);
@@ -54,13 +73,15 @@ export default function Account() {
     try {
       const updated = await api.updateAccount(newUsername.trim());
       updateUser(updated);
-      message.success(t('account.usernameChanged'));
+      notifySuccess(t('account.usernameChanged'));
       setEditingUsername(false);
-    } catch (err: any) {
-      if (err.message?.includes('already exists')) {
-        message.error(t('account.usernameExists'));
-      } else {
-        message.error(err.message || 'Failed');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        if (err.message?.includes('already exists')) {
+          notifyError(t('account.usernameExists'));
+        } else {
+          notifyError(err.message);
+        }
       }
     } finally {
       setUsernameLoading(false);
@@ -68,121 +89,108 @@ export default function Account() {
   };
 
   return (
-    <Space direction="vertical" size="large" style={{ width: '100%', maxWidth: 600 }}>
-      <Title level={3}>{t('account.title')}</Title>
+    <div className="max-w-2xl space-y-6">
+      <h1 className="text-2xl font-bold">{t('account.title')}</h1>
 
-      <Card title={t('account.userInfo')}>
-        <Descriptions column={1} size="small" labelStyle={{ fontWeight: 500 }}>
-          <Descriptions.Item label={t('account.userId')}>{user?.id}</Descriptions.Item>
-          <Descriptions.Item label={t('account.username')}>
+      {/* User Information Card */}
+      <Card>
+        <Card.Header>
+          <div className="flex items-center gap-2">
+            <User className="w-5 h-5 text-default-500" />
+            <Card.Title>{t('account.userInfo')}</Card.Title>
+          </div>
+        </Card.Header>
+        <Card.Content className="space-y-4">
+          <div className="flex items-center justify-between py-2 border-b border-default-200">
+            <span className="text-sm font-medium text-default-700">{t('account.userId')}</span>
+            <span className="text-sm">{user?.id}</span>
+          </div>
+
+          <div className="flex items-center justify-between py-2 border-b border-default-200">
+            <span className="text-sm font-medium text-default-700">{t('account.username')}</span>
             {editingUsername ? (
-              <Space>
+              <div className="flex items-center gap-2">
                 <Input
                   value={newUsername}
                   onChange={(e) => setNewUsername(e.target.value)}
-                  onPressEnter={handleSaveUsername}
-                  style={{ width: 200 }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleSaveUsername(); }}
+                  className="w-48"
                   autoFocus
                 />
-                <Button
-                  type="primary"
-                  size="small"
-                  loading={usernameLoading}
-                  onClick={handleSaveUsername}
-                >
+                <Button variant="primary" size="sm" isDisabled={usernameLoading} onPress={handleSaveUsername}>
                   {t('account.saveUsername')}
                 </Button>
                 <Button
-                  size="small"
-                  onClick={() => {
+                  variant="ghost"
+                  size="sm"
+                  onPress={() => {
                     setEditingUsername(false);
                     setNewUsername(user?.username || '');
                   }}
                 >
                   {t('button.cancel')}
                 </Button>
-              </Space>
+              </div>
             ) : (
-              <Space>
-                <span>{user?.username}</span>
-                <Button
-                  type="link"
-                  size="small"
-                  icon={<UserOutlined />}
-                  onClick={() => setEditingUsername(true)}
-                >
+              <div className="flex items-center gap-2">
+                <span className="text-sm">{user?.username}</span>
+                <Button variant="ghost" size="sm" onPress={() => setEditingUsername(true)}>
+                  <User className="w-4 h-4 mr-1" />
                   {t('account.editUsername')}
                 </Button>
-              </Space>
+              </div>
             )}
-          </Descriptions.Item>
-          <Descriptions.Item label={t('account.createdAt')}>
-            {user?.created_at ? dayjs(user.created_at).format('YYYY-MM-DD HH:mm:ss') : '-'}
-          </Descriptions.Item>
-        </Descriptions>
+          </div>
+
+          <div className="flex items-center justify-between py-2">
+            <span className="text-sm font-medium text-default-700">{t('account.createdAt')}</span>
+            <span className="text-sm">
+              {user?.created_at ? formatDate(user.created_at, i18n.language) : '—'}
+            </span>
+          </div>
+        </Card.Content>
       </Card>
 
-      <Card title={t('account.changePasswordTitle')}>
-        <Form
-          form={passwordForm}
-          layout="vertical"
-          onFinish={handleChangePassword}
-          autoComplete="off"
-        >
-          <Form.Item
-            name="currentPassword"
-            label={t('account.oldPassword')}
-            rules={[{ required: true, message: t('account.currentPasswordRequired') }]}
-          >
-            <Input.Password
-              prefix={<LockOutlined />}
-              placeholder={t('account.yourOldPassword')}
-            />
-          </Form.Item>
+      {/* Change Password Card */}
+      <Card>
+        <Card.Header>
+          <div className="flex items-center gap-2">
+            <Lock className="w-5 h-5 text-default-500" />
+            <Card.Title>{t('account.changePasswordTitle')}</Card.Title>
+          </div>
+        </Card.Header>
+        <Card.Content>
+          <form onSubmit={handleChangePassword} className="space-y-4">
+            <TextField value={currentPassword} onChange={setCurrentPassword} type="password" isRequired>
+              <Label>{t('account.oldPassword')}</Label>
+              <Input placeholder={t('account.yourOldPassword')} />
+              <FieldError>{t('account.currentPasswordRequired')}</FieldError>
+            </TextField>
 
-          <Form.Item
-            name="newPassword"
-            label={t('account.newPassword')}
-            rules={[
-              { required: true, message: t('account.newPasswordRequired') },
-              { min: 6, message: t('account.newPasswordMinLength') },
-            ]}
-          >
-            <Input.Password
-              prefix={<LockOutlined />}
-              placeholder={t('account.yourNewPassword')}
-            />
-          </Form.Item>
+            <TextField value={newPassword} onChange={setNewPassword} type="password" isRequired>
+              <Label>{t('account.newPassword')}</Label>
+              <Input placeholder={t('account.yourNewPassword')} />
+              <FieldError>{t('account.newPasswordRequired')}</FieldError>
+            </TextField>
 
-          <Form.Item
-            name="confirmPassword"
-            label={t('account.confirmPassword')}
-            dependencies={['newPassword']}
-            rules={[
-              { required: true, message: t('account.confirmPasswordRequired') },
-              ({ getFieldValue }) => ({
-                validator(_, value) {
-                  if (!value || getFieldValue('newPassword') === value) {
-                    return Promise.resolve();
-                  }
-                  return Promise.reject(new Error(t('account.passwordMismatch')));
-                },
-              }),
-            ]}
-          >
-            <Input.Password
-              prefix={<LockOutlined />}
-              placeholder={t('account.confirmNewPassword')}
-            />
-          </Form.Item>
+            <TextField value={confirmPassword} onChange={setConfirmPassword} type="password" isRequired>
+              <Label>{t('account.confirmPassword')}</Label>
+              <Input placeholder={t('account.confirmNewPassword')} />
+              <FieldError>{t('account.confirmPasswordRequired')}</FieldError>
+            </TextField>
 
-          <Form.Item>
-            <Button type="primary" htmlType="submit" loading={passwordLoading}>
-              {t('account.changePassword')}
+            {passwordError && (
+              <div className="p-3 rounded-lg bg-danger-50 text-danger text-sm">
+                {passwordError}
+              </div>
+            )}
+
+            <Button type="submit" variant="primary" isDisabled={passwordLoading}>
+              {passwordLoading ? 'Changing...' : t('account.changePassword')}
             </Button>
-          </Form.Item>
-        </Form>
+          </form>
+        </Card.Content>
       </Card>
-    </Space>
+    </div>
   );
 }

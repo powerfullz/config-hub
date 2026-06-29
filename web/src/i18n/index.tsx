@@ -1,12 +1,7 @@
 import i18n from 'i18next';
 import { initReactI18next, I18nextProvider } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
-import { ConfigProvider, theme as antTheme } from 'antd';
-import type { Locale } from 'antd/es/locale';
-import type { ThemeConfig } from 'antd';
-import { useState, useEffect, useMemo } from 'react';
-import { ThemeProvider, getThemeConfig, getGlobalStyles } from '../theme';
-import { useTheme } from '../theme';
+import { useEffect } from 'react';
 
 // Import all locale JSON files
 import commonZh from './locales/zh-CN/common.json';
@@ -32,24 +27,6 @@ const resources = {
     profileEditor: profileEditorEn,
   },
 };
-
-// Mapping from i18n language to antd locale import
-let antdLocaleMap: Record<string, Locale> = {};
-
-// Dynamic import of antd locales to avoid bundling issues
-async function loadAntdLocales() {
-  const [zhCN, enUS] = await Promise.all([
-    import('antd/locale/zh_CN'),
-    import('antd/locale/en_US'),
-  ]);
-  antdLocaleMap = {
-    'zh-CN': zhCN.default,
-    en: enUS.default,
-  };
-}
-
-// Track if antd locales have been loaded
-let antdLocalesReady = false;
 
 i18n
   .use(LanguageDetector)
@@ -84,75 +61,33 @@ if (!supportedLngs.includes(i18n.language)) {
 }
 
 /**
- * Global emotion styles that adapt to dark/light mode.
- * Extracted as a component so React can track identity across renders.
+ * Syncs document.documentElement.lang when i18n language changes.
  */
-function GlobalStyles({ isDark }: { isDark: boolean }) {
-  return getGlobalStyles(isDark);
-}
-
-/**
- * Inner provider that reads theme state and applies it to ConfigProvider.
- * Must be a child of ThemeProvider to access useTheme().
- */
-function ThemeAwareConfigProvider({ children }: { children: React.ReactNode }) {
-  const { isDark } = useTheme();
-  const [antdLocale, setAntdLocale] = useState<Locale | undefined>(undefined);
-
+function LangSync() {
   useEffect(() => {
-    // Load antd locales on mount
-    loadAntdLocales().then(() => {
-      antdLocalesReady = true;
-      const locale = antdLocaleMap[i18n.language] || antdLocaleMap['zh-CN'];
-      setAntdLocale(locale);
-    });
-
-    const handleLanguageChanged = (lng: string) => {
-      document.documentElement.lang = lng;
-      if (antdLocalesReady) {
-        const locale = antdLocaleMap[lng] || antdLocaleMap['zh-CN'];
-        setAntdLocale(locale);
-      }
-    };
-
-    // Set initial html lang
     document.documentElement.lang = i18n.language;
-
-    i18n.on('languageChanged', handleLanguageChanged);
+    const handler = (lng: string) => {
+      document.documentElement.lang = lng;
+    };
+    i18n.on('languageChanged', handler);
     return () => {
-      i18n.off('languageChanged', handleLanguageChanged);
+      i18n.off('languageChanged', handler);
     };
   }, []);
 
-  const currentTheme: ThemeConfig = useMemo(
-    () => ({
-      ...getThemeConfig(isDark),
-      algorithm: isDark ? antTheme.darkAlgorithm : antTheme.defaultAlgorithm,
-    }),
-    [isDark],
-  );
-
-  return (
-    <ConfigProvider theme={currentTheme} locale={antdLocale}>
-      <GlobalStyles isDark={isDark} />
-      {children}
-    </ConfigProvider>
-  );
+  return null;
 }
 
 /**
- * I18nProvider — wraps the app with I18nextProvider and antd ConfigProvider.
- * Syncs antd locale with i18n language changes, supports dark/light theme.
- * Also provides ThemeContext for child components (e.g., Layout) to access theme state.
+ * I18nProvider — wraps the app with I18nextProvider.
+ * Syncs document.documentElement.lang on language change.
+ * Theme is managed by HeroUI's useTheme (no provider needed here).
  */
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   return (
     <I18nextProvider i18n={i18n}>
-      <ThemeProvider>
-        <ThemeAwareConfigProvider>
-          {children}
-        </ThemeAwareConfigProvider>
-      </ThemeProvider>
+      <LangSync />
+      {children}
     </I18nextProvider>
   );
 }
@@ -163,5 +98,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
  */
 export type I18nNamespace = 'common' | 'dashboard' | 'subscriptions' | 'profileEditor';
 
+// eslint-disable-next-line react-refresh/only-export-components
 export { useTranslation } from 'react-i18next';
+// eslint-disable-next-line react-refresh/only-export-components
 export default i18n;

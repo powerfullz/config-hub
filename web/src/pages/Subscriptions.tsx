@@ -1,49 +1,50 @@
 import { useState, useEffect, useCallback } from 'react';
-import { api } from '../api/client';
-import type { Subscription, Node } from '../types';
-import { useTranslation } from '../i18n';
-import i18n from '../i18n';
 import {
+  Card,
   Table,
+  TableHeader,
+  TableBody,
+  TableColumn,
+  TableRow,
+  TableCell,
   Button,
   Modal,
-  Form,
+  TextField,
   Input,
-  Space,
-  Typography,
-  Tag,
+  Label,
+  FieldError,
   Switch,
-  Popconfirm,
-  message,
-  Empty,
-  Spin,
-  Tooltip,
-} from 'antd';
-import {
-  PlusOutlined,
-  ReloadOutlined,
-  DeleteOutlined,
-  EditOutlined,
-  LinkOutlined,
-  NodeIndexOutlined,
-} from '@ant-design/icons';
-import type { TableProps } from 'antd';
-
-const { Title, Text } = Typography;
+  Chip,
+  useOverlayState,
+} from '@heroui/react';
+import { Plus, RefreshCw, Trash2, Edit, Link, Server, ChevronDown, ChevronRight } from 'lucide-react';
+import { useTranslation } from '../i18n';
+import i18n from '../i18n';
+import { notifySuccess, notifyError } from '../utils/notifications';
+import { confirm } from '../utils/confirm';
+import { formatDateTime } from '../utils/date';
+import { EmptyState, LoadingState } from '../components/EmptyState';
+import { api } from '../api/client';
+import type { Subscription, Node } from '../types';
 
 export default function Subscriptions() {
   const { t } = useTranslation('subscriptions');
   const { t: tc } = useTranslation('common');
   const [subs, setSubs] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedRowKeys, setExpandedRowKeys] = useState<number[]>([]);
+  const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [nodes, setNodes] = useState<Record<number, Node[]>>({});
   const [nodesLoading, setNodesLoading] = useState<Record<number, boolean>>({});
-  const [modalOpen, setModalOpen] = useState(false);
   const [editingSub, setEditingSub] = useState<Subscription | null>(null);
-  const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
-  const [messageApi, contextHolder] = message.useMessage();
+
+  // Form state
+  const [formName, setFormName] = useState('');
+  const [formUrl, setFormUrl] = useState('');
+  const [formUserAgent, setFormUserAgent] = useState('');
+  const [formFetchProxy, setFormFetchProxy] = useState('');
+
+  const modalState = useOverlayState({ defaultOpen: false });
 
   const loadSubs = useCallback(async () => {
     setLoading(true);
@@ -51,70 +52,110 @@ export default function Subscriptions() {
       const data = await api.get<Subscription[]>('/api/subscriptions');
       setSubs(data);
     } catch (e: unknown) {
-      messageApi.error(e instanceof Error ? e.message : t('message.loadFailed'));
+      notifyError(e instanceof Error ? e.message : t('message.loadFailed'));
     } finally {
       setLoading(false);
     }
-  }, [messageApi]);
+  }, [t]);
 
   useEffect(() => {
-    let cancelled = false;
-    api
-      .get<Subscription[]>('/api/subscriptions')
-      .then(data => { if (!cancelled) setSubs(data); })
-      .catch(e => { if (!cancelled) messageApi.error(e instanceof Error ? e.message : t('message.loadFailed')); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [messageApi]);
+    loadSubs();
+  }, [loadSubs]);
+
+  const toggleExpand = async (subId: number) => {
+    const newExpanded = new Set(expanded);
+    if (newExpanded.has(subId)) {
+      newExpanded.delete(subId);
+      setExpanded(newExpanded);
+    } else {
+      newExpanded.add(subId);
+      setExpanded(newExpanded);
+      if (!nodes[subId]) {
+        setNodesLoading(prev => ({ ...prev, [subId]: true }));
+        try {
+          const data = await api.get<Node[]>(`/api/nodes?subscription_id=${subId}`);
+          setNodes(prev => ({ ...prev, [subId]: data }));
+        } catch (e: unknown) {
+          notifyError(e instanceof Error ? e.message : t('message.loadNodesFailed'));
+        } finally {
+          setNodesLoading(prev => ({ ...prev, [subId]: false }));
+        }
+      }
+    }
+  };
+
+  const resetForm = () => {
+    setFormName('');
+    setFormUrl('');
+    setFormUserAgent('');
+    setFormFetchProxy('');
+  };
 
   const handleAdd = () => {
     setEditingSub(null);
-    form.resetFields();
-    setModalOpen(true);
+    resetForm();
+    modalState.open();
   };
 
   const handleEdit = (sub: Subscription) => {
     setEditingSub(sub);
-    form.setFieldsValue({
-      name: sub.name,
-      url: sub.url,
-      user_agent: sub.user_agent || '',
-      fetch_proxy: sub.fetch_proxy || '',
-    });
-    setModalOpen(true);
+    setFormName(sub.name);
+    setFormUrl(sub.url);
+    setFormUserAgent(sub.user_agent || '');
+    setFormFetchProxy(sub.fetch_proxy || '');
+    modalState.open();
   };
 
-  const handleModalOk = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formName.trim() || !formUrl.trim()) return;
+
+    setSubmitting(true);
     try {
-      const values = await form.validateFields();
-      setSubmitting(true);
+      const payload = {
+        name: formName.trim(),
+        url: formUrl.trim(),
+        user_agent: formUserAgent.trim(),
+        fetch_proxy: formFetchProxy.trim(),
+      };
       if (editingSub) {
-        await api.put(`/api/subscriptions/${editingSub.id}`, values);
-        messageApi.success(t('message.updated'));
+        await api.put(`/api/subscriptions/${editingSub.id}`, payload);
+        notifySuccess(t('message.updated'));
       } else {
-        await api.post('/api/subscriptions', values);
-        messageApi.success(t('message.added'));
+        await api.post('/api/subscriptions', payload);
+        notifySuccess(t('message.added'));
       }
-      setModalOpen(false);
-      form.resetFields();
+      modalState.close();
+      resetForm();
       loadSubs();
     } catch (e: unknown) {
-      if (e instanceof Error) {
-        messageApi.error(e.message);
-      }
+      if (e instanceof Error) notifyError(e.message);
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDelete = async (id: number) => {
+    const ok = await confirm({
+      title: tc('confirm.deleteSubscription'),
+      message: tc('confirm.deleteSubscriptionMessage'),
+      danger: true,
+      confirmText: tc('button.delete'),
+      cancelText: tc('button.cancel'),
+    });
+    if (!ok) return;
+
     try {
       await api.delete(`/api/subscriptions/${id}`);
-      messageApi.success(t('message.deleted'));
-      setExpandedRowKeys(prev => prev.filter(k => k !== id));
+      notifySuccess(t('message.deleted'));
+      setExpanded(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
       loadSubs();
     } catch (e: unknown) {
-      messageApi.error(e instanceof Error ? e.message : t('message.deleteFailed'));
+      notifyError(e instanceof Error ? e.message : t('message.deleteFailed'));
     }
   };
 
@@ -123,10 +164,10 @@ export default function Subscriptions() {
       const res = await api.post<{ node_count: number; traffic: string }>(
         `/api/subscriptions/${id}/refresh`
       );
-      messageApi.success(t('message.refreshed', { count: res.node_count }));
+      notifySuccess(t('message.refreshed', { count: res.node_count }));
       loadSubs();
     } catch (e: unknown) {
-      messageApi.error(e instanceof Error ? e.message : t('message.refreshFailed'));
+      notifyError(e instanceof Error ? e.message : t('message.refreshFailed'));
     }
   };
 
@@ -135,269 +176,201 @@ export default function Subscriptions() {
       await api.put(`/api/subscriptions/${sub.id}`, { enabled: !sub.enabled });
       loadSubs();
     } catch (e: unknown) {
-      messageApi.error(e instanceof Error ? e.message : t('message.toggleFailed'));
+      notifyError(e instanceof Error ? e.message : t('message.toggleFailed'));
     }
   };
 
-  const handleExpand = async (expanded: boolean, record: Subscription) => {
-    if (expanded) {
-      setExpandedRowKeys(prev => [...prev, record.id]);
-      if (!nodes[record.id]) {
-        setNodesLoading(prev => ({ ...prev, [record.id]: true }));
-        try {
-          const data = await api.get<Node[]>(`/api/nodes?subscription_id=${record.id}`);
-          setNodes(prev => ({ ...prev, [record.id]: data }));
-        } catch (e: unknown) {
-          messageApi.error(e instanceof Error ? e.message : t('message.loadNodesFailed'));
-        } finally {
-          setNodesLoading(prev => ({ ...prev, [record.id]: false }));
-        }
-      }
-    } else {
-      setExpandedRowKeys(prev => prev.filter(k => k !== record.id));
-    }
+  const handleCloseModal = () => {
+    modalState.close();
+    resetForm();
+    setEditingSub(null);
   };
-
-  const nodeColumns = [
-    {
-      title: t('column.name'),
-      dataIndex: 'name',
-      key: 'name',
-    },
-    {
-      title: t('column.type'),
-      dataIndex: 'protocol',
-      key: 'protocol',
-      render: (protocol: string) => <Tag>{protocol}</Tag>,
-    },
-    {
-      title: t('column.server'),
-      dataIndex: 'server',
-      key: 'server',
-      ellipsis: true,
-    },
-    {
-      title: t('column.port'),
-      dataIndex: 'port',
-      key: 'port',
-      width: 80,
-    },
-    {
-      title: t('column.country'),
-      dataIndex: 'country',
-      key: 'country',
-      render: (country: string) => country || '-',
-    },
-  ];
-
-  const columns: TableProps<Subscription>['columns'] = [
-    {
-      title: t('column.name'),
-      dataIndex: 'name',
-      key: 'name',
-      render: (text: string) => <Text strong>{text}</Text>,
-    },
-    {
-      title: t('column.url'),
-      dataIndex: 'url',
-      key: 'url',
-      ellipsis: true,
-      render: (text: string) => (
-        <Tooltip title={text}>
-          <Space size={4}>
-            <LinkOutlined style={{ color: '#1677ff' }} />
-            <Text type="secondary" ellipsis style={{ maxWidth: 300 }}>
-              {text}
-            </Text>
-          </Space>
-        </Tooltip>
-      ),
-    },
-    {
-      title: t('column.nodes'),
-      dataIndex: 'node_count',
-      key: 'node_count',
-      width: 80,
-      align: 'center' as const,
-      render: (count: number) => (
-        <Tag icon={<NodeIndexOutlined />} color="blue">
-          {count}
-        </Tag>
-      ),
-    },
-    {
-      title: t('column.enabled'),
-      dataIndex: 'enabled',
-      key: 'enabled',
-      width: 80,
-      align: 'center' as const,
-      render: (_: boolean, record: Subscription) => (
-        <Switch
-          checked={record.enabled}
-          onChange={() => handleToggle(record)}
-          size="small"
-        />
-      ),
-    },
-    {
-      title: t('column.lastFetched'),
-      dataIndex: 'last_fetched_at',
-      key: 'last_fetched_at',
-      width: 160,
-      render: (text: string) =>
-        text ? (
-          <Text type="secondary" style={{ fontSize: 12 }}>
-            {new Date(text).toLocaleString(i18n.language)}
-          </Text>
-        ) : (
-          <Text type="secondary" style={{ fontSize: 12 }}>
-            {t('status.never')}
-          </Text>
-        ),
-    },
-    {
-      title: t('column.actions'),
-      key: 'actions',
-      width: 120,
-      align: 'center' as const,
-      render: (_: unknown, record: Subscription) => (
-        <Space size={4}>
-          <Tooltip title={t('tooltip.refresh')}>
-            <Button
-              type="text"
-              icon={<ReloadOutlined />}
-              onClick={() => handleRefresh(record.id)}
-              size="small"
-            />
-          </Tooltip>
-          <Tooltip title={t('tooltip.edit')}>
-            <Button
-              type="text"
-              icon={<EditOutlined />}
-              onClick={() => handleEdit(record)}
-              size="small"
-            />
-          </Tooltip>
-          <Popconfirm
-            title={t('deleteConfirm')}
-            onConfirm={() => handleDelete(record.id)}
-            okText={tc('button.delete')}
-            cancelText={tc('button.cancel')}
-            okButtonProps={{ danger: true }}
-          >
-            <Tooltip title={t('tooltip.delete')}>
-              <Button
-                type="text"
-                danger
-                icon={<DeleteOutlined />}
-                size="small"
-              />
-            </Tooltip>
-          </Popconfirm>
-        </Space>
-      ),
-    },
-  ];
 
   return (
-    <div>
-      {contextHolder}
-
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Space>
-          <Title level={4} style={{ margin: 0 }}>
-            {t('title')}
-          </Title>
-          <Tag color="blue">{subs.length}</Tag>
-        </Space>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+    <div className="space-y-4">
+      {/* Title Row */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold">{t('title')}</h1>
+          <Chip color="default" size="sm" variant="soft">{subs.length}</Chip>
+        </div>
+        <Button variant="primary" onPress={handleAdd}>
+          <Plus className="w-4 h-4 mr-2" />
           {t('addButton')}
         </Button>
       </div>
 
-      <Table<Subscription>
-        columns={columns}
-        dataSource={subs}
-        rowKey="id"
-        loading={loading}
-        expandable={{
-          expandedRowKeys,
-          onExpand: handleExpand,
-          expandedRowRender: (record) => {
-            const isLoading = nodesLoading[record.id];
-            const recordNodes = nodes[record.id] || [];
+      {/* Subscriptions Table */}
+      <Card>
+        <Card.Content className="p-0">
+          {loading ? (
+            <LoadingState />
+          ) : subs.length === 0 ? (
+            <EmptyState message={t('status.noSubs')} />
+          ) : (
+            <Table aria-label={t('title')}>
+              <TableHeader>
+                <TableColumn>{t('column.name')}</TableColumn>
+                <TableColumn>{t('column.url')}</TableColumn>
+                <TableColumn>{t('column.nodes')}</TableColumn>
+                <TableColumn>{t('column.enabled')}</TableColumn>
+                <TableColumn>{t('column.lastFetched')}</TableColumn>
+                <TableColumn>{t('column.actions')}</TableColumn>
+              </TableHeader>
+              <TableBody>
+                {subs.map(sub => (
+                  <>
+                    <TableRow key={`sub-${sub.id}`}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => toggleExpand(sub.id)}
+                            className="p-1 rounded hover:bg-default-200 transition-colors"
+                          >
+                            {expanded.has(sub.id) ? (
+                              <ChevronDown className="w-4 h-4" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4" />
+                            )}
+                          </button>
+                          <span className="font-medium">{sub.name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 max-w-xs truncate">
+                          <Link className="w-4 h-4 text-primary shrink-0" />
+                          <span className="text-default-500 truncate text-sm">{sub.url}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Chip color="default" size="sm" variant="soft">
+                          <Server className="w-3 h-3 mr-1" />
+                          {sub.node_count}
+                        </Chip>
+                      </TableCell>
+                      <TableCell>
+                        <Switch
+                          isSelected={sub.enabled}
+                          onChange={() => handleToggle(sub)}
+                          size="sm"
+                        >
+                          <Switch.Control>
+                            <Switch.Thumb />
+                          </Switch.Control>
+                        </Switch>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm text-default-500">
+                          {sub.last_fetched_at
+                            ? formatDateTime(sub.last_fetched_at, i18n.language)
+                            : t('status.never')}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="sm" onPress={() => handleRefresh(sub.id)}>
+                            <RefreshCw className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onPress={() => handleEdit(sub)}>
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button variant="danger-soft" size="sm" onPress={() => handleDelete(sub.id)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                    {expanded.has(sub.id) && (
+                      <TableRow key={`nodes-${sub.id}`}>
+                        <TableCell colSpan={6}>
+                          <div className="p-4 bg-default-50 rounded-lg">
+                            {nodesLoading[sub.id] ? (
+                              <LoadingState message={t('status.loadingNodes')} />
+                            ) : (nodes[sub.id] || []).length === 0 ? (
+                              <EmptyState message={t('status.noNodes')} />
+                            ) : (
+                              <Table aria-label={`Nodes for ${sub.name}`}>
+                                <TableHeader>
+                                  <TableColumn>{t('column.name')}</TableColumn>
+                                  <TableColumn>{t('column.type')}</TableColumn>
+                                  <TableColumn>{t('column.server')}</TableColumn>
+                                  <TableColumn>{t('column.port')}</TableColumn>
+                                  <TableColumn>{t('column.country')}</TableColumn>
+                                </TableHeader>
+                                <TableBody>
+                                  {(nodes[sub.id] || []).map(node => (
+                                    <TableRow key={node.id}>
+                                      <TableCell>{node.name}</TableCell>
+                                      <TableCell>
+                                        <Chip size="sm" variant="soft">{node.protocol}</Chip>
+                                      </TableCell>
+                                      <TableCell>
+                                        <span className="text-sm truncate max-w-xs block">{node.server}</span>
+                                      </TableCell>
+                                      <TableCell>{node.port}</TableCell>
+                                      <TableCell>{node.country || '—'}</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </Card.Content>
+      </Card>
 
-            if (isLoading) {
-              return (
-                <div style={{ padding: 24, textAlign: 'center' }}>
-                  <Spin tip={t('status.loadingNodes')} />
-                </div>
-              );
-            }
+      {/* Add/Edit Modal */}
+      <Modal.Root state={modalState} onOpenChange={isOpen => { if (!isOpen) handleCloseModal(); }}>
+        <Modal.Backdrop />
+        <Modal.Container size="md">
+          <Modal.Dialog>
+            <form onSubmit={handleSubmit}>
+              <Modal.Header>
+                <Modal.Heading>{editingSub ? t('modal.titleEdit') : t('modal.titleAdd')}</Modal.Heading>
+                <Modal.CloseTrigger />
+              </Modal.Header>
+              <Modal.Body className="flex flex-col gap-4">
+                <TextField value={formName} onChange={setFormName} isRequired>
+                  <Label>{t('form.name')}</Label>
+                  <Input autoFocus placeholder={t('form.namePlaceholder')} />
+                  <FieldError>{t('form.nameRequired')}</FieldError>
+                </TextField>
 
-            return (
-              <Table
-                columns={nodeColumns}
-                dataSource={recordNodes}
-                rowKey="id"
-                pagination={false}
-                size="small"
-                locale={{
-                  emptyText: <Empty description={t('status.noNodes')} image={Empty.PRESENTED_IMAGE_SIMPLE} />,
-                }}
-              />
-            );
-          },
-        }}
-        locale={{
-          emptyText: <Empty description={t('status.noSubs')} />,
-        }}
-        pagination={{ pageSize: 10, showSizeChanger: false, showTotal: (total) => t('status.totalSubscriptions', { total }) }}
-      />
+                <TextField value={formUrl} onChange={setFormUrl} isRequired>
+                  <Label>{t('form.url')}</Label>
+                  <Input placeholder={t('form.urlPlaceholder')} />
+                  <FieldError>{t('form.urlRequired')}</FieldError>
+                </TextField>
 
-      <Modal
-        title={editingSub ? t('modal.titleEdit') : t('modal.titleAdd')}
-        open={modalOpen}
-        onOk={handleModalOk}
-        onCancel={() => {
-          setModalOpen(false);
-          form.resetFields();
-        }}
-        confirmLoading={submitting}
-        okText={editingSub ? t('modal.okUpdate') : t('modal.okAdd')}
-      >
-        <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
-          <Form.Item
-            name="name"
-            label={t('form.name')}
-            rules={[{ required: true, message: t('form.nameRequired') }]}
-          >
-            <Input placeholder={t('form.namePlaceholder')} />
-          </Form.Item>
-          <Form.Item
-            name="url"
-            label={t('form.url')}
-            rules={[
-              { required: true, message: t('form.urlRequired') },
-              { type: 'url', message: t('form.urlInvalid') },
-            ]}
-          >
-            <Input placeholder={t('form.urlPlaceholder')} />
-          </Form.Item>
-          <Form.Item
-            name="user_agent"
-            label={t('form.userAgent')}
-          >
-            <Input placeholder={t('form.userAgentPlaceholder')} />
-          </Form.Item>
-          <Form.Item
-            name="fetch_proxy"
-            label={t('form.fetchProxy')}
-          >
-            <Input placeholder={t('form.fetchProxyPlaceholder')} />
-          </Form.Item>
-        </Form>
-      </Modal>
+                <TextField value={formUserAgent} onChange={setFormUserAgent}>
+                  <Label>{t('form.userAgent')}</Label>
+                  <Input placeholder={t('form.userAgentPlaceholder')} />
+                </TextField>
+
+                <TextField value={formFetchProxy} onChange={setFormFetchProxy}>
+                  <Label>{t('form.fetchProxy')}</Label>
+                  <Input placeholder={t('form.fetchProxyPlaceholder')} />
+                </TextField>
+              </Modal.Body>
+              <Modal.Footer>
+                <Button type="button" variant="ghost" onPress={handleCloseModal}>
+                  {tc('button.cancel')}
+                </Button>
+                <Button type="submit" variant="primary" isDisabled={submitting || !formName.trim() || !formUrl.trim()}>
+                  {editingSub ? t('modal.okUpdate') : t('modal.okAdd')}
+                </Button>
+              </Modal.Footer>
+            </form>
+          </Modal.Dialog>
+        </Modal.Container>
+      </Modal.Root>
     </div>
   );
 }
