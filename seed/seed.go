@@ -1,8 +1,6 @@
 package seed
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"log/slog"
 
 	"config-hub/db"
@@ -34,13 +32,7 @@ func Run() error {
 	}
 
 	// Create admin user.
-	// Generate random admin password on first initialization
-	rawPwd := make([]byte, 12)
-	if _, err := rand.Read(rawPwd); err != nil {
-		tx.Rollback()
-		return err
-	}
-	password := hex.EncodeToString(rawPwd)
+	password := "admin123"
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), 12)
 	if err != nil {
 		tx.Rollback()
