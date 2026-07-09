@@ -1,2 +1,39 @@
 @import "tailwindcss";
 @import "@heroui/react/styles";
+
+/* YAML syntax highlighting */
+.yaml-highlight .yaml-key {
+  color: hsl(var(--heroui-primary));
+  font-weight: 600;
+}
+
+.yaml-highlight .yaml-section-key {
+  color: hsl(var(--heroui-primary));
+  font-weight: 700;
+  font-size: 0.75rem;
+}
+
+.yaml-highlight .yaml-string {
+  color: hsl(var(--heroui-success));
+}
+
+.yaml-highlight .yaml-number {
+  color: hsl(var(--heroui-warning));
+}
+
+.yaml-highlight .yaml-boolean {
+  color: hsl(var(--heroui-secondary));
+}
+
+.yaml-highlight .yaml-comment {
+  color: hsl(var(--heroui-default-400));
+  font-style: italic;
+}
+
+.yaml-highlight .yaml-list-marker {
+  color: hsl(var(--heroui-default-500));
+}
+
+.yaml-highlight .yaml-plain {
+  color: hsl(var(--heroui-default-700));
+}

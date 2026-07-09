@@ -125,7 +125,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </div>
             <div className="min-w-0">
               <p className="font-medium truncate">{user?.username || 'Admin'}</p>
-              <p className="text-sm text-default-500">Administrator</p>
+              <p className="text-sm text-default-500">{t('account.administrator')}</p>
             </div>
           </div>
         </div>
@@ -172,7 +172,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <button
             onClick={() => setSidebarOpen((prev) => !prev)}
             className="lg:hidden mr-4 p-2 rounded-lg hover:bg-default-200 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            aria-label={sidebarOpen ? 'Close navigation' : 'Open navigation'}
+            aria-label={sidebarOpen ? t('layout.closeNav') : t('layout.openNav')}
           >
             {sidebarOpen ? <X className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
           </button>

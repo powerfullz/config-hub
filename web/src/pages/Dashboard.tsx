@@ -34,6 +34,9 @@ import { notifySuccess, notifyError } from '../utils/notifications';
 import { confirm } from '../utils/confirm';
 import { EmptyState, LoadingState } from '../components/EmptyState';
 import { StatCard } from '../components/StatCard';
+import { YamlPreview } from '../components/YamlPreview';
+import { ValidationPanel } from '../components/ValidationPanel';
+import { RuleTester } from '../components/RuleTester';
 import ProfileEditor from '../components/ProfileEditor';
 import TokenManager from '../components/TokenManager';
 import { api } from '../api/client';
@@ -153,7 +156,7 @@ export default function Dashboard() {
           .put(`/api/profiles/${selectedId}/groups/reorder`, {
             order: reordered.map(g => g.id),
           })
-          .catch(e => setError(e.message));
+          .catch(e => setError(e instanceof Error ? e.message : String(e)));
       }
     },
     [selectedId, groups],
@@ -257,7 +260,7 @@ export default function Dashboard() {
                           <Edit className="w-3 h-3" />
                         </Button>
                         <Button
-                          variant="danger-soft"
+                          variant="danger"
                           size="sm"
                           onPress={() => handleDeleteProfile(item.id)}
                         >
@@ -354,8 +357,16 @@ export default function Dashboard() {
                 </Card.Content>
               </Card>
 
+              {/* Validation + Rule Tester */}
+              {selectedId && (
+                <div className="grid grid-cols-2 gap-4">
+                  <ValidationPanel profileId={selectedId} />
+                  <RuleTester profileId={selectedId} />
+                </div>
+              )}
+
               {/* Share Link Tokens */}
-              <TokenManager profileId={selectedId!} />
+              {selectedId && <TokenManager profileId={selectedId} />}
             </>
           )}
         </main>
@@ -373,9 +384,7 @@ export default function Dashboard() {
               {loadingProfile ? (
                 <LoadingState />
               ) : yaml ? (
-                <pre className="m-0 p-4 text-xs leading-relaxed font-mono whitespace-pre-wrap break-all bg-default-50 text-default-900">
-                  {yaml}
-                </pre>
+                <YamlPreview yaml={yaml} />
               ) : (
                 <EmptyState message={t('yaml.empty')} />
               )}

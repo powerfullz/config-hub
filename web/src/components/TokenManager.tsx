@@ -2,11 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   Table,
-  TableHeader,
-  TableBody,
-  TableColumn,
-  TableRow,
-  TableCell,
   Button,
   Modal,
   TextField,
@@ -30,7 +25,7 @@ interface TokenManagerProps {
 }
 
 export default function TokenManager({ profileId }: TokenManagerProps) {
-  const { t } = useTranslation('profileEditor');
+  const { t, i18n } = useTranslation('profileEditor');
   const { t: tc } = useTranslation('common');
   const [tokens, setTokens] = useState<Token[]>([]);
   const [loading, setLoading] = useState(false);
@@ -144,38 +139,42 @@ export default function TokenManager({ profileId }: TokenManagerProps) {
           ) : tokens.length === 0 ? (
             <EmptyState message={t('token.empty')} />
           ) : (
-            <Table aria-label={t('token.title')}>
-              <TableHeader>
-                <TableColumn>{t('token.table.name')}</TableColumn>
-                <TableColumn>{t('token.table.created')}</TableColumn>
-                <TableColumn>{t('token.table.lastUsed')}</TableColumn>
-                <TableColumn>{t('token.table.status')}</TableColumn>
-                <TableColumn>{t('token.table.actions')}</TableColumn>
-              </TableHeader>
-              <TableBody>
-                {tokens.map(token => (
-                  <TableRow key={token.id}>
-                    <TableCell>{token.name}</TableCell>
-                    <TableCell>{formatDateTime(token.created_at)}</TableCell>
-                    <TableCell>{token.last_used_at ? formatDateTime(token.last_used_at) : '\u2014'}</TableCell>
-                    <TableCell>
-                      <Chip color={token.revoked ? 'danger' : 'success'} size="sm" variant="soft">
-                        {token.revoked ? t('token.status.revoked') : t('token.status.active')}
-                      </Chip>
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="danger-soft"
-                        size="sm"
-                        isDisabled={token.revoked}
-                        onPress={() => handleRevoke(token.id)}
-                      >
-                        {tc('button.revoke')}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
+            <Table>
+              <Table.ScrollContainer>
+                <Table.Content aria-label={t('token.title')}>
+                  <Table.Header>
+                    <Table.Column>{t('token.table.name')}</Table.Column>
+                    <Table.Column>{t('token.table.created')}</Table.Column>
+                    <Table.Column>{t('token.table.lastUsed')}</Table.Column>
+                    <Table.Column>{t('token.table.status')}</Table.Column>
+                    <Table.Column>{t('token.table.actions')}</Table.Column>
+                  </Table.Header>
+                  <Table.Body>
+                    {tokens.map(token => (
+                      <Table.Row key={token.id}>
+                        <Table.Cell>{token.name}</Table.Cell>
+                        <Table.Cell>{formatDateTime(token.created_at, i18n.language)}</Table.Cell>
+                        <Table.Cell>{token.last_used_at ? formatDateTime(token.last_used_at, i18n.language) : '\u2014'}</Table.Cell>
+                        <Table.Cell>
+                          <Chip color={token.revoked ? 'danger' : 'success'} size="sm" variant="soft">
+                            {token.revoked ? t('token.status.revoked') : t('token.status.active')}
+                          </Chip>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            isDisabled={token.revoked}
+                            onPress={() => handleRevoke(token.id)}
+                          >
+                            {tc('button.revoke')}
+                          </Button>
+                        </Table.Cell>
+                      </Table.Row>
+                    ))}
+                  </Table.Body>
+                </Table.Content>
+              </Table.ScrollContainer>
             </Table>
           )}
         </Card.Content>

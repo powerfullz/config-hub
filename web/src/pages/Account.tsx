@@ -110,13 +110,9 @@ export default function Account() {
             <span className="text-sm font-medium text-default-700">{t('account.username')}</span>
             {editingUsername ? (
               <div className="flex items-center gap-2">
-                <Input
-                  value={newUsername}
-                  onChange={(e) => setNewUsername(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleSaveUsername(); }}
-                  className="w-48"
-                  autoFocus
-                />
+                <TextField value={newUsername} onChange={setNewUsername}>
+                  <Input autoFocus className="w-48" />
+                </TextField>
                 <Button variant="primary" size="sm" isDisabled={usernameLoading} onPress={handleSaveUsername}>
                   {t('account.saveUsername')}
                 </Button>
@@ -186,7 +182,7 @@ export default function Account() {
             )}
 
             <Button type="submit" variant="primary" isDisabled={passwordLoading}>
-              {passwordLoading ? 'Changing...' : t('account.changePassword')}
+              {passwordLoading ? t('account.changing') : t('account.changePassword')}
             </Button>
           </form>
         </Card.Content>

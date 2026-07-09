@@ -20,6 +20,7 @@ func BuildConfig(profileID uint) (*ConfigTemplate, error) {
 		Preload("Subscriptions").
 		Preload("SubscriptionGroups.Subscriptions").
 		Preload("Rules", func(tx *gorm.DB) *gorm.DB { return tx.Order("sort_order ASC") }).
+		Preload("ProxyGroups", func(tx *gorm.DB) *gorm.DB { return tx.Order("sort_order ASC") }).
 		First(&profile, profileID).Error; err != nil {
 		return nil, fmt.Errorf("profile not found: %w", err)
 	}
@@ -110,7 +111,11 @@ func BuildConfig(profileID uint) (*ConfigTemplate, error) {
 		template.Tun = seed.DefaultTUN
 	}
 
-	template.ProxyGroups = buildProxyGroups(countries, classification, countryGroupNames, nonLandingNodes, profile)
+	if len(profile.ProxyGroups) > 0 {
+		template.ProxyGroups = buildProxyGroupsFromDB(profile.ProxyGroups)
+	} else {
+		template.ProxyGroups = buildProxyGroups(countries, classification, countryGroupNames, nonLandingNodes, profile)
+	}
 
 	return template, nil
 }

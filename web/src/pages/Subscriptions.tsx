@@ -2,11 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   Table,
-  TableHeader,
-  TableBody,
-  TableColumn,
-  TableRow,
-  TableCell,
   Button,
   Modal,
   TextField,
@@ -130,6 +125,7 @@ export default function Subscriptions() {
       loadSubs();
     } catch (e: unknown) {
       if (e instanceof Error) notifyError(e.message);
+      else notifyError(t('message.submitFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -208,119 +204,133 @@ export default function Subscriptions() {
           ) : subs.length === 0 ? (
             <EmptyState message={t('status.noSubs')} />
           ) : (
-            <Table aria-label={t('title')}>
-              <TableHeader>
-                <TableColumn>{t('column.name')}</TableColumn>
-                <TableColumn>{t('column.url')}</TableColumn>
-                <TableColumn>{t('column.nodes')}</TableColumn>
-                <TableColumn>{t('column.enabled')}</TableColumn>
-                <TableColumn>{t('column.lastFetched')}</TableColumn>
-                <TableColumn>{t('column.actions')}</TableColumn>
-              </TableHeader>
-              <TableBody>
-                {subs.map(sub => (
-                  <>
-                    <TableRow key={`sub-${sub.id}`}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => toggleExpand(sub.id)}
-                            className="p-1 rounded hover:bg-default-200 transition-colors"
-                          >
-                            {expanded.has(sub.id) ? (
-                              <ChevronDown className="w-4 h-4" />
-                            ) : (
-                              <ChevronRight className="w-4 h-4" />
-                            )}
-                          </button>
-                          <span className="font-medium">{sub.name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2 max-w-xs truncate">
-                          <Link className="w-4 h-4 text-primary shrink-0" />
-                          <span className="text-default-500 truncate text-sm">{sub.url}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Chip color="default" size="sm" variant="soft">
-                          <Server className="w-3 h-3 mr-1" />
-                          {sub.node_count}
-                        </Chip>
-                      </TableCell>
-                      <TableCell>
-                        <Switch
-                          isSelected={sub.enabled}
-                          onChange={() => handleToggle(sub)}
-                          size="sm"
-                        >
-                          <Switch.Control>
-                            <Switch.Thumb />
-                          </Switch.Control>
-                        </Switch>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm text-default-500">
-                          {sub.last_fetched_at
-                            ? formatDateTime(sub.last_fetched_at, i18n.language)
-                            : t('status.never')}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Button variant="ghost" size="sm" onPress={() => handleRefresh(sub.id)}>
-                            <RefreshCw className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" onPress={() => handleEdit(sub)}>
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button variant="danger-soft" size="sm" onPress={() => handleDelete(sub.id)}>
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                    {expanded.has(sub.id) && (
-                      <TableRow key={`nodes-${sub.id}`}>
-                        <TableCell colSpan={6}>
-                          <div className="p-4 bg-default-50 rounded-lg">
-                            {nodesLoading[sub.id] ? (
-                              <LoadingState message={t('status.loadingNodes')} />
-                            ) : (nodes[sub.id] || []).length === 0 ? (
-                              <EmptyState message={t('status.noNodes')} />
-                            ) : (
-                              <Table aria-label={`Nodes for ${sub.name}`}>
-                                <TableHeader>
-                                  <TableColumn>{t('column.name')}</TableColumn>
-                                  <TableColumn>{t('column.type')}</TableColumn>
-                                  <TableColumn>{t('column.server')}</TableColumn>
-                                  <TableColumn>{t('column.port')}</TableColumn>
-                                  <TableColumn>{t('column.country')}</TableColumn>
-                                </TableHeader>
-                                <TableBody>
-                                  {(nodes[sub.id] || []).map(node => (
-                                    <TableRow key={node.id}>
-                                      <TableCell>{node.name}</TableCell>
-                                      <TableCell>
-                                        <Chip size="sm" variant="soft">{node.protocol}</Chip>
-                                      </TableCell>
-                                      <TableCell>
-                                        <span className="text-sm truncate max-w-xs block">{node.server}</span>
-                                      </TableCell>
-                                      <TableCell>{node.port}</TableCell>
-                                      <TableCell>{node.country || '—'}</TableCell>
-                                    </TableRow>
-                                  ))}
-                                </TableBody>
-                              </Table>
-                            )}
+            <Table>
+              <Table.ScrollContainer>
+                <Table.Content aria-label={t('title')}>
+                  <Table.Header>
+                    <Table.Column>{t('column.name')}</Table.Column>
+                    <Table.Column>{t('column.url')}</Table.Column>
+                    <Table.Column>{t('column.nodes')}</Table.Column>
+                    <Table.Column>{t('column.enabled')}</Table.Column>
+                    <Table.Column>{t('column.lastFetched')}</Table.Column>
+                    <Table.Column>{t('column.actions')}</Table.Column>
+                  </Table.Header>
+                  <Table.Body>
+                    {subs.flatMap(sub => [
+                      <Table.Row key={`sub-${sub.id}`}>
+                        <Table.Cell>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => toggleExpand(sub.id)}
+                              className="p-1 rounded hover:bg-default-200 transition-colors"
+                            >
+                              {expanded.has(sub.id) ? (
+                                <ChevronDown className="w-4 h-4" />
+                              ) : (
+                                <ChevronRight className="w-4 h-4" />
+                              )}
+                            </button>
+                            <span className="font-medium">{sub.name}</span>
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </>
-                ))}
-              </TableBody>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <div className="flex items-center gap-2 max-w-xs truncate">
+                            <Link className="w-4 h-4 text-primary shrink-0" />
+                            <span className="text-default-500 truncate text-sm">{sub.url}</span>
+                          </div>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <Chip color="default" size="sm" variant="soft">
+                            <Server className="w-3 h-3 mr-1" />
+                            {sub.node_count}
+                          </Chip>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <Switch
+                            isSelected={sub.enabled}
+                            onChange={() => handleToggle(sub)}
+                            size="sm"
+                          >
+                            <Switch.Control>
+                              <Switch.Thumb />
+                            </Switch.Control>
+                          </Switch>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <span className="text-sm text-default-500">
+                            {sub.last_fetched_at
+                              ? formatDateTime(sub.last_fetched_at, i18n.language)
+                              : t('status.never')}
+                          </span>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="sm" onPress={() => handleRefresh(sub.id)}>
+                              <RefreshCw className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onPress={() => handleEdit(sub)}>
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button variant="danger" size="sm" onPress={() => handleDelete(sub.id)}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </Table.Cell>
+                      </Table.Row>,
+                      ...(expanded.has(sub.id) ? [
+                        <Table.Row key={`nodes-${sub.id}`}>
+                          <Table.Cell colSpan={7}>
+                            <div className="p-4 bg-default-50 rounded-lg">
+                              {nodesLoading[sub.id] ? (
+                                <LoadingState message={t('status.loadingNodes')} />
+                              ) : (nodes[sub.id] || []).length === 0 ? (
+                                <EmptyState message={t('status.noNodes')} />
+                              ) : (
+                                <Table>
+                                  <Table.ScrollContainer>
+                                    <Table.Content aria-label={t('status.nodesFor', { name: sub.name })}>
+                                      <Table.Header>
+                                        <Table.Column>{t('column.name')}</Table.Column>
+                                        <Table.Column>{t('column.type')}</Table.Column>
+                                        <Table.Column>{t('column.server')}</Table.Column>
+                                        <Table.Column>{t('column.port')}</Table.Column>
+                                        <Table.Column>{t('column.country')}</Table.Column>
+                                        <Table.Column>{t('column.latency')}</Table.Column>
+                                      </Table.Header>
+                                      <Table.Body>
+                                        {(nodes[sub.id] || []).map(node => (
+                                          <Table.Row key={node.id}>
+                                            <Table.Cell>{node.name}</Table.Cell>
+                                            <Table.Cell>
+                                              <Chip size="sm" variant="soft">{node.protocol}</Chip>
+                                            </Table.Cell>
+                                            <Table.Cell>
+                                              <span className="text-sm truncate max-w-xs block">{node.server}</span>
+                                            </Table.Cell>
+                                            <Table.Cell>{node.port}</Table.Cell>
+                                            <Table.Cell>{node.country || '—'}</Table.Cell>
+                                            <Table.Cell>
+                                              {node.latency > 0 ? (
+                                                <span className="text-sm">{node.latency}ms</span>
+                                              ) : (
+                                                <span className="text-sm text-default-400">—</span>
+                                              )}
+                                            </Table.Cell>
+                                          </Table.Row>
+                                        ))}
+                                      </Table.Body>
+                                    </Table.Content>
+                                  </Table.ScrollContainer>
+                                </Table>
+                              )}
+                            </div>
+                          </Table.Cell>
+                        </Table.Row>
+                      ] : [])
+                    ])}
+                  </Table.Body>
+                </Table.Content>
+              </Table.ScrollContainer>
             </Table>
           )}
         </Card.Content>

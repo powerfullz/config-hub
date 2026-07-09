@@ -20,7 +20,8 @@
   },
   "yaml": {
     "title": "YAML Preview",
-    "empty": "Select a profile to preview"
+    "empty": "Select a profile to preview",
+    "copyYaml": "Copy YAML"
   },
   "placeholder": {
     "selectProfile": "Select a profile to view its configuration"
@@ -28,5 +29,23 @@
   "error": {
     "requestFailed": "Request failed",
     "deleteFailed": "Delete failed"
+  },
+  "validation": {
+    "title": "Config Validation",
+    "run": "Validate",
+    "valid": "Valid",
+    "invalid": "Invalid",
+    "allClear": "No issues found. Config is valid.",
+    "hint": "Click Validate to check your config for errors and warnings."
+  },
+  "ruleTester": {
+    "title": "Rule Tester",
+    "placeholder": "Enter domain or IP (e.g., youtube.com, 8.8.8.8)",
+    "test": "Test",
+    "matched": "Matched",
+    "noMatch": "No match",
+    "rule": "Rule",
+    "type": "Type",
+    "group": "Group"
   }
 }

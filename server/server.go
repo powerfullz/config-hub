@@ -57,6 +57,8 @@ func RegisterRoutes(e *echo.Echo) {
 	profiles.DELETE("/:id/tokens/:tokenId", handler.RevokeToken)
 	profiles.GET("/:id/preview", handler.PreviewConfig)
 	profiles.GET("/:id/export", handler.ExportConfig)
+	profiles.POST("/:id/validate", handler.ValidateConfig)
+	profiles.POST("/:id/test-rule", handler.TestRule)
 
 	// Subscription Group routes
 	subGroups := protected.Group("/subscription-groups")

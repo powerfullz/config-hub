@@ -70,21 +70,42 @@ All regex patterns are compiled via `regexp.MustCompile` using Go's RE2 engine (
 ## Web Frontend
 
 ### Stack
-- React 19 + Ant Design 6 + Vite 8 + TypeScript 6
+- React 19 + HeroUI v3 (@heroui/react) + TailwindCSS v4 + Vite 8 + TypeScript 6
 - `react-router-dom` v7 for routing
 - `@dnd-kit/core` for drag-and-drop sorting
-- `@emotion/react` for global CSS
+- `lucide-react` for icons
+- `i18next` + `react-i18next` for i18n (zh-CN + en)
+
+### HeroUI Component Patterns
+- **Card**: `<Card><Card.Header><Card.Title>Title</Card.Title></Card.Header><Card.Content>...</Card.Content></Card>`
+- **Modal**: `<Modal.Root state={state}><Modal.Backdrop /><Modal.Container><Modal.Dialog><Modal.Header><Modal.Heading /><Modal.CloseTrigger /></Modal.Header><Modal.Body>...</Modal.Body><Modal.Footer>...</Modal.Footer></Modal.Dialog></Modal.Container></Modal.Root>`
+- **Table**: `<Table><Table.ScrollContainer><Table.Content><Table.Header><Table.Column>...</Table.Column></Table.Header><Table.Body><Table.Row><Table.Cell>...</Table.Cell></Table.Row></Table.Body></Table.Content></Table.ScrollContainer></Table>`
+- **TextField/Input**: `<TextField value={val} onChange={setVal}><Label>Label</Label><Input /><FieldError>Error</FieldError></TextField>`
+- **Button**: `<Button variant="primary|ghost|danger" size="sm|md" onPress={handler}>...</Button>`
+- **Switch**: `<Switch isSelected={val} onChange={setVal}><Switch.Content><Switch.Control><Switch.Thumb /></Switch.Control>Label</Switch.Content></Switch>`
+- **Chip**: `<Chip color="default|success|danger|warning|accent" size="sm" variant="soft">...</Chip>`
+- **Select**: `<Select selectedKey={key} onSelectionChange={fn}><Label>Label</Label><Select.Trigger><Select.Value /><Select.Indicator /></Select.Trigger><Select.Popover><ListBox><ListBox.Item key={id}>Label</ListBox.Item></ListBox></Select.Popover></Select>`
+- **Toast**: `toast.success(msg)`, `toast.danger(msg)` from `@heroui/react`
+- **useOverlayState**: Hook for managing Modal/Popover open state
+
+### TailwindCSS v4 Setup
+- Config: CSS-based via `@import "tailwindcss"` in `index.css`
+- Plugin: `@tailwindcss/vite` in `vite.config.ts`
+- HeroUI styles: `@import "@heroui/react/styles"` in `index.css`
+- Theme colors use HeroUI semantic tokens: `bg-default-50`, `text-primary`, `bg-danger/10`, etc.
+- Dark mode: managed by HeroUI's `useTheme` hook, stored as `heroui-theme` in localStorage
 
 ### Directory (`web/src/`)
 | Directory     | Purpose                                              |
 | ------------- | ---------------------------------------------------- |
 | `api/`        | `ApiClient` class (fetch wrapper with JWT)           |
-| `components/` | `Layout.tsx`, `ProfileEditor.tsx`, `TokenManager.tsx` |
-| `pages/`      | `Dashboard.tsx`, `Login.tsx`, `Subscriptions.tsx`    |
-| `hooks/`      | `useAuth.ts` (login/logout/isLoggedIn state)         |
+| `components/` | `Layout.tsx`, `ProfileEditor.tsx`, `TokenManager.tsx`, `StatCard.tsx`, `EmptyState.tsx` |
+| `pages/`      | `Dashboard.tsx`, `Login.tsx`, `Subscriptions.tsx`, `Account.tsx` |
+| `hooks/`      | `useAuth.ts` (login/logout state), `useAuthStorage.ts` (localStorage/sessionStorage) |
 | `i18n/`       | i18next config (`index.tsx`) + locale JSONs          |
-| `theme/`      | antd theme tokens + emotion global styles            |
+| `theme/`      | HeroUI `useTheme` wrapper for legacy compatibility   |
 | `types/`      | TypeScript interfaces (Profile, Node, Token, etc.)   |
+| `utils/`      | `notifications.ts` (toast), `confirm.tsx` (modal confirm), `date.ts` (formatting) |
 
 ### Dev vs Production
 - **Dev**: `pnpm dev` (Vite :5173, proxies `/api` and `/sub` to :1323). Go backend runs separately.
@@ -128,11 +149,10 @@ const { t: tc } = useTranslation('common');
 ### I18nProvider
 `web/src/i18n/index.tsx` exports `I18nProvider` which wraps:
 1. `I18nextProvider` (i18next instance)
-2. `ConfigProvider` (antd — auto-syncs locale via `import('antd/locale/zh_CN')`)
-3. `html[lang]` sync on language change
-4. `themeConfig` from `../theme`
+2. `LangSync` component (syncs `html[lang]` on language change)
 
-`main.tsx` uses `<I18nProvider>` as the root wrapper — does NOT import antd or theme directly.
+Theme is managed separately by HeroUI's `useTheme` hook — no provider needed.
+`main.tsx` uses `<I18nProvider>` as the root wrapper, plus HeroUI `<Toast.Provider>` for notifications.
 
 ### Missing Keys
 - **Dev**: `saveMissing: true` + `missingKeyHandler` logs `console.warn`

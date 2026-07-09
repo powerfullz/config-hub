@@ -27,6 +27,7 @@
   },
   "button": {
     "cancel": "Cancel",
+    "ok": "OK",
     "delete": "Delete",
     "save": "Save",
     "edit": "Edit",
@@ -51,7 +52,8 @@
     "forgotPassword": "Forgot password?",
     "submit": "Login",
     "submitting": "Signing in...",
-    "failed": "Login failed"
+    "failed": "Login failed",
+    "tagline": "Manage your proxy configurations"
   },
   "groupType": {
     "select": "手动选择 (select)",
@@ -103,6 +105,12 @@
     "oldPassword": "Current Password",
     "yourOldPassword": "Please enter current password",
     "yourNewPassword": "Please enter new password",
-    "confirmNewPassword": "Please confirm new password"
+    "confirmNewPassword": "Please confirm new password",
+    "changing": "Changing...",
+    "administrator": "Administrator"
+  },
+  "layout": {
+    "closeNav": "Close navigation",
+    "openNav": "Open navigation"
   }
 }

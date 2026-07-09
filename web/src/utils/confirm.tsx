@@ -6,6 +6,7 @@
  */
 import { createRoot } from 'react-dom/client';
 import { Modal, Button, useOverlayState } from '@heroui/react';
+import i18n from '../i18n';
 
 type ConfirmOptions = {
   title: string;
@@ -40,13 +41,13 @@ export function confirm(options: ConfirmOptions): Promise<boolean> {
               <Modal.Body>{options.message}</Modal.Body>
               <Modal.Footer>
                 <Button variant="ghost" onPress={() => cleanup(false)}>
-                  {options.cancelText || 'Cancel'}
+                  {options.cancelText || i18n.t('common:button.cancel')}
                 </Button>
                 <Button
                   variant={options.danger ? 'danger' : 'primary'}
                   onPress={() => cleanup(true)}
                 >
-                  {options.confirmText || 'OK'}
+                  {options.confirmText || i18n.t('common:button.ok')}
                 </Button>
               </Modal.Footer>
             </Modal.Dialog>

@@ -45,8 +45,8 @@ export default function Login() {
       {/* Left Branding Panel */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary to-primary-600 items-center justify-center p-12">
         <div className="text-white text-center">
-          <h1 className="text-5xl font-bold mb-4">Config Hub</h1>
-          <p className="text-xl opacity-90">Manage your proxy configurations</p>
+          <h1 className="text-5xl font-bold mb-4">{t('app.title')}</h1>
+          <p className="text-xl opacity-90">{t('login.tagline')}</p>
         </div>
       </div>
 

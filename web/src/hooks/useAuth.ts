@@ -11,8 +11,12 @@ import {
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(() => {
-    const stored = getStoredUser();
-    return stored ? JSON.parse(stored) : null;
+    try {
+      const stored = getStoredUser();
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
   });
 
   const login = useCallback(async (username: string, password: string, rememberMe: boolean = true) => {

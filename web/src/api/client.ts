@@ -12,6 +12,17 @@ class ApiClient {
     return localStorage.getItem('token');
   }
 
+  private handle401(res: Response): void {
+    if (res.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+      throw new Error('Unauthorized');
+    }
+  }
+
   private async request<T>(path: string, options: RequestInit = {}): Promise<T> {
     const token = this.getToken();
     const headers: Record<string, string> = {
@@ -24,21 +35,14 @@ class ApiClient {
 
     const res = await fetch(`${BASE}${path}`, { ...options, headers });
 
-    if (res.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
-      throw new Error('Unauthorized');
-    }
+    this.handle401(res);
 
     if (!res.ok) {
       const err: ApiError = await res.json().catch(() => ({ error: res.statusText, code: res.status }));
       throw new Error(err.error || 'Request failed');
     }
 
-    return res.json();
+    return res.json().catch(() => { throw new Error('Invalid JSON response'); });
   }
 
   get<T>(path: string): Promise<T> {
@@ -68,15 +72,11 @@ class ApiClient {
     const headers: Record<string, string> = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
     const res = await fetch(`${BASE}${path}`, { headers });
-    if (res.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
-      throw new Error('Unauthorized');
+    this.handle401(res);
+    if (!res.ok) {
+      const err: ApiError = await res.json().catch(() => ({ error: res.statusText, code: res.status }));
+      throw new Error(err.error || 'Request failed');
     }
-    if (!res.ok) throw new Error('Request failed');
     return res.text();
   }
 

@@ -7,11 +7,7 @@ import {
   Label,
   FieldError,
   Select,
-  ListBoxItem,
-  SelectTrigger,
-  SelectValue,
-  SelectIndicator,
-  SelectPopover,
+  ListBox,
   Switch,
   NumberField,
   Checkbox,
@@ -119,7 +115,9 @@ export default function ProfileEditor({ open, profile, onClose, onSaved }: Props
       api.get<Profile>(`/api/profiles/${profile.id}`).then(p => {
         setSelectedSubs(p.subscriptions?.map(s => String(s.id)) ?? []);
         setSelectedGroups(p.subscription_groups?.map(g => String(g.id)) ?? []);
-      }).catch(() => {});
+      }).catch((err: unknown) => {
+        if (err instanceof Error) notifyError(err.message);
+      });
     } else {
       setName('');
       setFileName('');
@@ -174,13 +172,17 @@ export default function ProfileEditor({ open, profile, onClose, onSaved }: Props
         // Associate subscriptions
         if (selectedSubs.length > 0) {
           for (const sid of selectedSubs) {
-            await api.post(`/api/profiles/${created.id}/subscriptions`, { subscription_id: Number(sid) }).catch(() => {});
+            await api.post(`/api/profiles/${created.id}/subscriptions`, { subscription_id: Number(sid) }).catch((err: unknown) => {
+              if (err instanceof Error) notifyError(err.message);
+            });
           }
         }
         // Associate subscription groups
         if (selectedGroups.length > 0) {
           for (const gid of selectedGroups) {
-            await api.post(`/api/profiles/${created.id}/subscription-groups`, { subscription_group_id: Number(gid) }).catch(() => {});
+            await api.post(`/api/profiles/${created.id}/subscription-groups`, { subscription_group_id: Number(gid) }).catch((err: unknown) => {
+              if (err instanceof Error) notifyError(err.message);
+            });
           }
         }
       }
@@ -246,17 +248,19 @@ export default function ProfileEditor({ open, profile, onClose, onSaved }: Props
               {/* Group Type */}
               <Select selectedKey={groupType} onSelectionChange={key => setGroupType(String(key))}>
                 <Label>{t('field.groupType')}</Label>
-                <SelectTrigger>
-                  <SelectValue />
-                  <SelectIndicator />
-                </SelectTrigger>
-                <SelectPopover>
-                  {GROUP_TYPE_OPTIONS.map(opt => (
-                    <ListBoxItem key={opt.id} id={opt.id}>
-                      {tc(opt.labelKey)}
-                    </ListBoxItem>
-                  ))}
-                </SelectPopover>
+                <Select.Trigger>
+                  <Select.Value />
+                  <Select.Indicator />
+                </Select.Trigger>
+                <Select.Popover>
+                  <ListBox>
+                    {GROUP_TYPE_OPTIONS.map(opt => (
+                      <ListBox.Item key={opt.id} id={opt.id}>
+                        {tc(opt.labelKey)}
+                      </ListBox.Item>
+                    ))}
+                  </ListBox>
+                </Select.Popover>
               </Select>
 
               {/* Threshold */}
