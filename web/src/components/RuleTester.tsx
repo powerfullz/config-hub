@@ -53,12 +53,9 @@ export function RuleTester({ profileId }: RuleTesterProps) {
           <TextField
             value={input}
             onChange={setInput}
-            placeholder={t('ruleTester.placeholder')}
-            size="sm"
-            variant="bordered"
             className="flex-1"
           >
-            <Input />
+            <Input placeholder={t('ruleTester.placeholder')} />
           </TextField>
           <Button
             variant="primary"
@@ -98,13 +95,13 @@ export function RuleTester({ profileId }: RuleTesterProps) {
                 {result.rule_type && (
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-default-500">{t('ruleTester.type')}:</span>
-                    <Chip size="sm" variant="flat">{result.rule_type}</Chip>
+                    <Chip size="sm" variant="soft">{result.rule_type}</Chip>
                   </div>
                 )}
                 {result.group && (
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-default-500">{t('ruleTester.group')}:</span>
-                    <Chip size="sm" variant="flat" color="primary">{result.group}</Chip>
+                    <Chip size="sm" variant="soft" color="accent">{result.group}</Chip>
                   </div>
                 )}
                 {result.reason && (

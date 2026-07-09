@@ -84,7 +84,7 @@ export function ValidationPanel({ profileId }: ValidationPanelProps) {
                 <div className="min-w-0 flex-1">
                   <p className="text-sm">{msg.message}</p>
                   {msg.field && (
-                    <Chip size="sm" variant="flat" color="default" className="mt-1">
+                    <Chip size="sm" variant="soft" color="default" className="mt-1">
                       {msg.field}
                     </Chip>
                   )}

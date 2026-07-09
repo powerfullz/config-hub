@@ -566,6 +566,64 @@ func pg(name, typ, icon string, proxies []string) map[string]any {
 	return m
 }
 
+// buildProxyGroupsFromDB converts database proxy groups to mihomo config format.
+func buildProxyGroupsFromDB(groups []model.ProxyGroup) []map[string]any {
+	sort.Slice(groups, func(i, j int) bool {
+		return groups[i].SortOrder < groups[j].SortOrder
+	})
+
+	result := make([]map[string]any, 0, len(groups))
+	for _, g := range groups {
+		m := map[string]any{
+			"name": g.Name,
+			"type": g.Type,
+		}
+
+		var proxies []string
+		if g.Proxies != "" {
+			if err := json.Unmarshal([]byte(g.Proxies), &proxies); err != nil {
+				proxies = []string{}
+			}
+		}
+		if !g.IncludeAll {
+			m["proxies"] = proxies
+		}
+
+		if g.Icon != "" {
+			m["icon"] = g.Icon
+		}
+		if g.IncludeAll {
+			m["include-all"] = true
+		}
+		if g.Filter != "" {
+			m["filter"] = g.Filter
+		}
+		if g.ExcludeFilter != "" {
+			m["exclude-filter"] = g.ExcludeFilter
+		}
+
+		addHealthCheck(m, g.Type)
+
+		if g.URL != "" {
+			m["url"] = g.URL
+		}
+		if g.Interval > 0 {
+			m["interval"] = g.Interval
+		}
+		if g.Tolerance > 0 {
+			m["tolerance"] = g.Tolerance
+		}
+		if g.Strategy != "" {
+			m["strategy"] = g.Strategy
+		} else if g.Type == "load-balance" {
+			m["strategy"] = "sticky-sessions"
+		}
+
+		result = append(result, m)
+	}
+	return result
+}
+
 // pgIncludeAll creates a select group with include-all and optional icon.
 func pgIncludeAll(name, typ, icon string) map[string]any {
 	m := map[string]any{"name": name, "type": typ, "include-all": true}
